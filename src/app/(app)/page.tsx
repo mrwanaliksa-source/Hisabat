@@ -49,7 +49,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       .eq("company_id", company.id).order("code"),
     supabase.from("v_project_profitability").select("project_id,revenue,direct_costs,partner_share_cost,gross_profit").eq("company_id", company.id),
     supabase.from("v_project_advance_retention").select("project_id,works_certified,advance_outstanding,retention_outstanding").eq("company_id", company.id),
-    supabase.from("v_sales_document_balances").select("project_id,collectible_total,collected,balance").eq("company_id", company.id).eq("status", "posted"),
+    supabase.from("v_sales_document_balances").select("id,project_id,collectible_total,collected,balance").eq("company_id", company.id).eq("status", "posted"),
     supabase.from("v_partner_project_accounts").select("project_id,net_due_to_company").eq("company_id", company.id),
     supabase.from("v_trial_balance").select("account_id,balance").eq("company_id", company.id),
     supabase.from("accounts").select("id,system_key,is_bank,code,name_ar,name_en").eq("company_id", company.id),
@@ -57,6 +57,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     supabase.from("v_purchase_balances").select("balance").eq("company_id", company.id).gt("balance", 0),
     supabase.from("partner_agreements").select("project_id,share_pct,basis").eq("company_id", company.id),
   ]);
+  const { data: nets } = await supabase.from("sales_documents").select("id,project_id,collectible_net,collectible_total")
+    .eq("company_id", company.id).eq("status", "posted");
+  const netRatio = new Map((nets ?? []).map((x) => [x.id, Number(x.collectible_total) > 0 ? Number(x.collectible_net) / Number(x.collectible_total) : 0]));
 
   // company-wide strip: things that only make sense for the whole company
   const bal = new Map(((tb ?? []) as TB[]).map((r) => [r.account_id, Number(r.balance)]));
@@ -73,10 +76,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const A = new Map((advret ?? []).map((x) => [x.project_id, x]));
   const H = new Map((held ?? []).map((x) => [x.project_id, Number(x.net_due_to_company)]));
   const G = new Map((agreements ?? []).map((x) => [x.project_id, x]));
-  const D = new Map<string, { billed: number; collected: number; due: number }>();
+  const D = new Map<string, { billed: number; collected: number; due: number; collectedNet: number }>();
   for (const d of docs ?? []) {
-    const cur = D.get(d.project_id) ?? { billed: 0, collected: 0, due: 0 };
+    const cur = D.get(d.project_id) ?? { billed: 0, collected: 0, due: 0, collectedNet: 0 };
     cur.billed += Number(d.collectible_total); cur.collected += Number(d.collected); cur.due += Number(d.balance);
+    cur.collectedNet += Number(d.collected) * (netRatio.get(d.id) ?? 0);
     D.set(d.project_id, cur);
   }
   const all = projects ?? [];
@@ -115,7 +119,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         {visible.length === 0 && <div className="card empty"><p className="muted">{t.dash.noProjects}</p></div>}
         <div className="project-cards">
           {visible.map((p) => {
-            const f = P.get(p.id), a = A.get(p.id), d = D.get(p.id) ?? { billed: 0, collected: 0, due: 0 }, g = G.get(p.id);
+            const f = P.get(p.id), a = A.get(p.id), d = D.get(p.id) ?? { billed: 0, collected: 0, due: 0, collectedNet: 0 }, g = G.get(p.id);
+            const netCash = d.collectedNet - Number(f?.direct_costs ?? 0) - Number(f?.partner_share_cost ?? 0);
             const contract = Number(p.contract_value), certified = Number(a?.works_certified ?? 0);
             const progress = contract > 0 ? Math.min(100, (certified / contract) * 100) : 0;
             const profit = Number(f?.gross_profit ?? 0);
@@ -154,6 +159,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 <div className={`pc-profit ${profit < 0 ? "neg" : ""}`}>
                   <span>{t.dash.profit}</span><b className="num">{money(profit)} <small>{t.sar}</small></b>
                 </div>
+                {!partnerHeld && (
+                  <div className={`pc-cash ${netCash < 0 ? "neg" : ""}`} title={t.dash.cashHint}>
+                    <span>{t.dash.cash}</span><b className="num">{money(netCash)} <small>{t.sar}</small></b>
+                  </div>
+                )}
+                {!partnerHeld && Number(a?.advance_outstanding ?? 0) > 0 && profit < 0 && <p className="muted tiny-note">{t.dash.cashHint}</p>}
                 {profitBasisOpen && <p className="muted tiny-note">* {t.pp.profitNote}</p>}
               </Link>
             );

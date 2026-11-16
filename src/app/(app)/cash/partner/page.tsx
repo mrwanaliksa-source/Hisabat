@@ -20,7 +20,7 @@ export default async function PartnerPay({ searchParams }: { searchParams: SP })
     supabase.from("projects").select("code,name_ar,name_en").eq("id", sp.project ?? "").maybeSingle(),
     supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).order("code"),
     supabase.from("partner_entitlements").select("id,created_at,collected_amount,net_collected,amount,doc:sales_documents(issuer_ref,doc_type)")
-      .eq("partner_id", sp.partner).eq("project_id", sp.project ?? "").order("created_at"),
+      .eq("partner_id", sp.partner).eq("project_id", sp.project ?? "").is("reversed_at", null).order("created_at"),
   ]);
   const nm = (x: { name_ar: string; name_en: string | null } | null) => (x ? (lang === "en" && x.name_en) || x.name_ar : "—");
 

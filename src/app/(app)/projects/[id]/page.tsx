@@ -69,12 +69,14 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
           {Number(bal?.retention_outstanding ?? 0) > 0 && (
             <Link href={`/sales/new?project=${id}&type=retention_release`} className="btn soft">{t.docType.retention_release} +</Link>
           )}
+          {manager && <Link href={`/projects/${id}/edit`} className="btn ghost">{t.detail.edit}</Link>}
           <Link href="/projects" className="btn ghost">{t.back}</Link>
         </div>
       </div>
 
       {sp.err && <p className="alert error">{sp.err}</p>}
       {sp.ok === "close" && <p className="alert ok">✓ {t.pp.closed}</p>}
+      {sp.ok === "edit" && <p className="alert ok">✓ {t.set.saved}</p>}
 
       <div className="grid-3">
         <section className="card">

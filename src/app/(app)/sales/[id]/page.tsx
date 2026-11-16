@@ -35,8 +35,8 @@ export default async function SalesDocPage({ params, searchParams }: { params: P
   }
 
   const [{ data: allocs }, { data: shares }, { data: lines }] = await Promise.all([
-    manager ? supabase.from("receipt_allocations").select("id,amount,created_at,receipt:receipts(receipt_date,reference)").eq("sales_document_id", id) : Promise.resolve({ data: null }),
-    manager ? supabase.from("partner_entitlements").select("id,collected_amount,net_collected,share_pct,amount,partner:parties(name_ar,name_en)").eq("sales_document_id", id) : Promise.resolve({ data: null }),
+    manager ? supabase.from("receipt_allocations").select("id,amount,created_at,receipt:receipts(receipt_date,reference)").eq("sales_document_id", id).is("reversed_at", null) : Promise.resolve({ data: null }),
+    manager ? supabase.from("partner_entitlements").select("id,collected_amount,net_collected,share_pct,amount,partner:parties(name_ar,name_en)").eq("sales_document_id", id).is("reversed_at", null) : Promise.resolve({ data: null }),
     manager && d.journal_entry_id ? supabase.from("journal_lines").select("id,debit,credit,account:accounts(code,name_ar,name_en)").eq("entry_id", d.journal_entry_id) : Promise.resolve({ data: null }),
   ]);
   const collected = (allocs ?? []).reduce((s, a) => s + Number(a.amount), 0);

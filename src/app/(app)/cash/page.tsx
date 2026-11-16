@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
 import { Icon } from "@/components/Icon";
+import { reverseReceipt } from "./actions";
 
-export default async function CashPage({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
+export default async function CashPage({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string }> }) {
   const sp = await searchParams;
   const lang = await getLang();
   const t = dict(lang);
@@ -58,6 +59,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
         <Link href="/cash/receipt/new" className="btn primary"><Icon name="in" /> {t.cash.newReceipt}</Link>
       </div>
       {sp.ok && <p className="alert ok">✓</p>}
+      {sp.err && <p className="alert error">{sp.err}</p>}
 
       <section className="kpis">
         {(banks ?? []).map((b) => (
@@ -77,13 +79,29 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
                 <th className="n">{t.cash.amount}</th><th className="n">{t.cash.allocated}</th><th className="n">{t.cash.unallocated}</th><th /></tr></thead>
               <tbody>
                 {receipts.map((r) => (
-                  <tr key={r.id}>
-                    <td className="num">{r.receipt_date}</td><td>{pn.get(r.customer_id)}</td><td className="num">{r.reference ?? "—"}</td>
-                    <td className="n num">{money(r.amount)}</td><td className="n num">{money(r.allocated)}</td>
+                  <tr key={r.id} className={r.reversed_at ? "is-reversed" : ""}>
+                    <td className="num">{r.receipt_date}</td><td>{pn.get(r.customer_id)}</td>
+                    <td className="num">{r.reference ?? "—"}
+                      {r.reversed_at && <><span className="chip tiny st-closed">{t.cash.reversed}</span> <span className="muted small">{r.reverse_reason}</span></>}</td>
+                    <td className="n num"><span className={r.reversed_at ? "struck" : ""}>{money(r.amount)}</span></td>
+                    <td className="n num">{money(r.allocated)}</td>
                     <td className="n num">{Number(r.unallocated) > 0 ? <b className="warn-text">{money(r.unallocated)}</b> : money(0)}</td>
-                    <td>{Number(r.unallocated) > 0 && (
-                      <Link className="btn soft sm" href={`/cash/receipt/new?receipt=${r.id}`}>{t.cash.allocateRest}</Link>
-                    )}</td>
+                    <td className="actions">
+                      {!r.reversed_at && Number(r.unallocated) > 0 && (
+                        <Link className="btn soft sm" href={`/cash/receipt/new?receipt=${r.id}`}>{t.cash.allocateRest}</Link>
+                      )}
+                      {!r.reversed_at && (
+                        <details className="inline-menu">
+                          <summary className="btn ghost sm danger">{t.cash.reverse}</summary>
+                          <form action={reverseReceipt} className="stack pop">
+                            <input type="hidden" name="id" value={r.id} />
+                            <p className="muted small">{t.cash.reverseHint}</p>
+                            <label className="field"><span>{t.cash.reverseReason}<b className="req"> *</b></span><input name="reason" required /></label>
+                            <button className="btn primary sm danger-fill" data-act="reverse">{t.cash.reverseConfirm}</button>
+                          </form>
+                        </details>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
