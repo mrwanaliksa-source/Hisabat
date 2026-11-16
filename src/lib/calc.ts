@@ -4,6 +4,7 @@ export type DocType = "advance" | "progress_claim" | "retention_release" | "othe
 export type ProjectTerms = {
   id: string; contract_value: number; recovery_pct: number; retention_pct: number;
   retention_cap_pct: number | null; advance_outstanding: number; retention_held: number; retention_outstanding: number;
+  vat_mode?: "A" | "B";   // A: VAT before retention (default) · B: VAT after retention (70% method)
 };
 export type Calc = {
   recovery: number; retention: number; vatBase: number; vat: number;
@@ -26,6 +27,12 @@ export function calcDoc(type: DocType, work: number, discount: number, t: Projec
     if (t.retention_cap_pct != null) {
       retention = Math.min(retention, Math.max(r2(t.contract_value * t.retention_cap_pct) - t.retention_held, 0));
     }
+    if (t.vat_mode === "B") {
+      const vatBase = r2(work - discount - recovery - retention);
+      const vat = r2(vatBase * vatRate);
+      const invoiceTotal = r2(vatBase + vat);
+      return { recovery, retention, vatBase, vat, invoiceTotal, due: invoiceTotal, netDue: vatBase };
+    }
     const vatBase = r2(work - discount - recovery);
     const vat = r2(vatBase * vatRate);
     const invoiceTotal = r2(vatBase + vat);
@@ -33,7 +40,12 @@ export function calcDoc(type: DocType, work: number, discount: number, t: Projec
   }
   if (type === "retention_release") {
     const over = t ? work > t.retention_outstanding + 0.001 : false;
-    return { recovery: 0, retention: 0, vatBase: 0, vat: 0, invoiceTotal: work, due: work, netDue: work, error: over ? "release" : undefined };
+    const err = over ? ("release" as const) : undefined;
+    if (t?.vat_mode === "B") {   // retention was invoiced without VAT, so VAT is due on release
+      const vat = r2(work * vatRate);
+      return { recovery: 0, retention: 0, vatBase: work, vat, invoiceTotal: r2(work + vat), due: r2(work + vat), netDue: work, error: err };
+    }
+    return { recovery: 0, retention: 0, vatBase: 0, vat: 0, invoiceTotal: work, due: work, netDue: work, error: err };
   }
   const vatBase = r2(work - discount);
   const vat = r2(vatBase * vatRate);

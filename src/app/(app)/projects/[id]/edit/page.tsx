@@ -73,7 +73,7 @@ export default async function EditProject({ params, searchParams }: { params: Pr
           </div>
           <F label={t.form.releaseTerms}><input name="retention_release_terms" defaultValue={p.retention_release_terms ?? ""} placeholder={t.form.releaseHint} /></F>
           <p className="muted small">{t.detail.advanceNote}</p>
-          <p className="note">{t.form.vatNote}</p>
+          <p className="note">{p.retention_vat_mode === "B" ? t.form.vatNoteB : t.form.vatNote}</p>
         </fieldset>
 
         <button className="btn primary self-start" data-act="save">{t.detail.save}</button>

@@ -12,7 +12,7 @@ export async function saveTransfer(fd: FormData) {
   const direction = s("direction");
   const { error } = await supabase.rpc("record_partner_transfer", {
     p_company: company.id, p_project: project, p_date: s("date"), p_amount: toNum(fd.get("amount")),
-    p_direction: direction, p_bank_account: direction === "partner_paid_vat" ? null : s("bank") || null,
+    p_direction: direction, p_bank_account: ["to_company", "to_partner"].includes(direction) ? s("bank") || null : null,
     p_reference: s("reference") || null,
   });
   if (error) redirect(`/cash/transfer?project=${project}&err=${encodeURIComponent(error.message)}`);

@@ -11,7 +11,7 @@ export default async function NewSalesDoc({ searchParams }: { searchParams: Prom
   if (!company) return null;
 
   const [{ data: projects }, { data: bal }, { data: partners }] = await Promise.all([
-    supabase.from("projects").select("id,code,name_ar,name_en,contract_value,recovery_pct,retention_pct,retention_cap_pct,customer:parties!projects_customer_id_fkey(name_ar,name_en,is_government)")
+    supabase.from("projects").select("id,code,name_ar,name_en,contract_value,recovery_pct,retention_pct,retention_cap_pct,retention_vat_mode,customer:parties!projects_customer_id_fkey(name_ar,name_en,is_government)")
       .eq("company_id", company.id).in("status", ["active", "on_hold", "completed", "closed"]).order("code"),
     supabase.from("v_project_advance_retention").select("project_id,advance_outstanding,retention_held,retention_outstanding").eq("company_id", company.id),
     supabase.from("partner_agreements").select("project_id,share_pct,effective_to,basis").eq("company_id", company.id),
@@ -28,6 +28,7 @@ export default async function NewSalesDoc({ searchParams }: { searchParams: Prom
       retention_cap_pct: p.retention_cap_pct == null ? null : Number(p.retention_cap_pct),
       advance_outstanding: Number(x?.advance_outstanding ?? 0), retention_held: Number(x?.retention_held ?? 0),
       retention_outstanding: Number(x?.retention_outstanding ?? 0),
+      vat_mode: p.retention_vat_mode === "B" ? "B" : "A",
     };
     return {
       terms, label: `${p.code} · ${(lang === "en" && p.name_en) || p.name_ar}`,

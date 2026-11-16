@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money, pct } from "@/lib/i18n";
-import { projectAction } from "./actions";
+import { projectAction, adjustOpening } from "./actions";
 
 type Params = Promise<{ id: string }>;
 
@@ -90,7 +90,7 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
             <div><dt>{t.form.retentionCap}</dt><dd className="num">{p.retention_cap_pct == null ? "—" : pct(p.retention_cap_pct)}</dd></div>
             {p.retention_release_terms && <div><dt>{t.form.releaseTerms}</dt><dd>{p.retention_release_terms}</dd></div>}
           </dl>
-          <p className="note">{t.form.vatNote}</p>
+          <p className="note">{p.retention_vat_mode === "B" ? t.form.vatNoteB : t.form.vatNote}</p>
         </section>
 
         <section className="card">
@@ -146,10 +146,41 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
             <div className="kpi"><span className="kpi-label">{t.pp.collectedByPartner}</span><span className="kpi-value num">{money(acct.collected_by_partner)}</span></div>
             <div className="kpi"><span className="kpi-label">{t.pp.transferred}</span><span className="kpi-value num">{money(acct.transferred_to_company)}</span></div>
             <div className="kpi"><span className="kpi-label">{t.pp.vatPaid}</span><span className="kpi-value num">{money(acct.vat_paid_by_partner)}</span></div>
+            {Number(acct.share_kept_by_partner) > 0 && <div className="kpi"><span className="kpi-label">{t.pp.keptShare}</span><span className="kpi-value num">{money(acct.share_kept_by_partner)}</span></div>}
+            {Number(acct.zakat_kept_by_partner) > 0 && <div className="kpi"><span className="kpi-label">{t.pp.keptZakat}</span><span className="kpi-value num">{money(acct.zakat_kept_by_partner)}</span></div>}
             <div className="kpi"><span className="kpi-label">{t.pp.held}</span><span className="kpi-value num">{money(acct.held_by_partner)}</span></div>
             <div className="kpi"><span className="kpi-label">{t.pp.partnerVat}</span><span className="kpi-value num">{money(acct.partner_vat_due)}</span></div>
             <div className="kpi hl"><span className="kpi-label">{t.pp.netDue}</span><span className="kpi-value num">{money(acct.net_due_to_company)}</span></div>
           </div>
+        </section>
+      )}
+
+      {role === "admin" && p.opening_cash != null && (
+        <section className="card" id="opening">
+          <div className="card-head"><h2>{t.op.title}</h2></div>
+          {p.opening_adjusted_at ? (
+            <dl className="kv">
+              <div><dt>{t.op.opening}</dt><dd className="num">{money(p.opening_cash)}</dd></div>
+              <div><dt>{t.op.diff}</dt><dd className="num">{money(p.opening_adjust_amount)}</dd></div>
+              <div className="hl"><dt>{t.op.final}</dt><dd className="num">{money(Number(p.opening_cash) + Number(p.opening_adjust_amount))}</dd></div>
+              <div><dt>{t.op.reason}</dt><dd>{p.opening_adjust_reason}</dd></div>
+              <p className="muted small">🔒 {t.op.locked} <span className="num">{String(p.opening_adjusted_at).slice(0, 10)}</span></p>
+            </dl>
+          ) : (
+            <form action={adjustOpening} className="stack">
+              <input type="hidden" name="id" value={id} />
+              <p className="muted small">{t.op.hint.replace("{amount}", money(p.opening_cash))}</p>
+              <div className="grid-3">
+                <label className="field"><span>{t.op.actual}<b className="req"> *</b></span>
+                  <input name="actual" inputMode="decimal" dir="ltr" required defaultValue={String(p.opening_cash)} /></label>
+                <label className="field"><span>{t.cash.date}</span>
+                  <input type="date" name="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></label>
+                <label className="field"><span>{t.op.reason}<b className="req"> *</b></span><input name="reason" required /></label>
+              </div>
+              <p className="alert warn">{t.op.warn}</p>
+              <button className="btn primary self-start" data-act="opening">{t.op.save}</button>
+            </form>
+          )}
         </section>
       )}
 

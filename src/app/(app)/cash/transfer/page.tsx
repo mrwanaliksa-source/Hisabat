@@ -22,7 +22,7 @@ export default async function PartnerTransfer({ searchParams }: { searchParams: 
   if (!acct) redirect(`/projects/${sp.project}`);
   const { data: partner } = await supabase.from("parties").select("name_ar,name_en").eq("id", acct.partner_id).maybeSingle();
   const nm = (x: { name_ar: string; name_en: string | null } | null) => (x ? (lang === "en" && x.name_en) || x.name_ar : "—");
-  const dirLabel = { to_company: t.pp.toCompany, to_partner: t.pp.toPartner, partner_paid_vat: t.pp.paidVat } as Record<string, string>;
+  const dirLabel = { to_company: t.pp.toCompany, to_partner: t.pp.toPartner, partner_paid_vat: t.pp.paidVat, partner_kept_share: t.pp.keptShare, partner_kept_zakat: t.pp.keptZakat } as Record<string, string>;
 
   return (
     <div className="stack-lg">
@@ -48,12 +48,14 @@ export default async function PartnerTransfer({ searchParams }: { searchParams: 
               <option value="to_company">{t.pp.toCompany}</option>
               <option value="to_partner">{t.pp.toPartner}</option>
               <option value="partner_paid_vat">{t.pp.paidVat}</option>
+              <option value="partner_kept_share">{t.pp.keptShare}</option>
+              <option value="partner_kept_zakat">{t.pp.keptZakat}</option>
             </select></label>
           <label className="field"><span>{t.cash.payAmount}</span>
             <input name="amount" inputMode="decimal" dir="ltr" required placeholder="0.00" /></label>
           <label className="field"><span>{t.cash.date}</span>
             <input type="date" name="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></label>
-          <label className="field"><span>{t.cash.bank}</span>
+          <label className="field"><span>{t.cash.bank} <small className="muted">{t.pp.bankNote}</small></span>
             <select name="bank">{(banks ?? []).map((b) => <option key={b.id} value={b.id}>{b.code} · {nm(b)}</option>)}</select></label>
           <label className="field"><span>{t.cash.reference}</span><input name="reference" dir="ltr" /></label>
           <button className="btn primary" data-act="transfer">{t.pp.save}</button>

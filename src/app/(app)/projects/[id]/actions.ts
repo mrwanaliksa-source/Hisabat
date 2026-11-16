@@ -14,3 +14,14 @@ export async function projectAction(fd: FormData) {
   revalidatePath(`/projects/${id}`); revalidatePath("/projects"); revalidatePath("/"); revalidatePath("/cash");
   redirect(`/projects/${id}${error ? `?err=${encodeURIComponent(error.message)}` : `?ok=${what}`}`);
 }
+
+export async function adjustOpening(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = String(fd.get("id") ?? "");
+  const actual = Number(String(fd.get("actual") ?? "").replace(/,/g, ""));
+  const { error } = await supabase.rpc("adjust_opening_cash", {
+    p_project: id, p_actual: actual, p_date: String(fd.get("date") ?? "") || null, p_reason: String(fd.get("reason") ?? ""),
+  });
+  revalidatePath(`/projects/${id}`); revalidatePath("/"); revalidatePath("/cash");
+  redirect(`/projects/${id}${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=opening"}`);
+}

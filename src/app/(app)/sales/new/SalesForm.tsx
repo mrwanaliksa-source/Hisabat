@@ -105,21 +105,23 @@ export function SalesForm({ t, projects, initialProject, initialType }: Props) {
         <div className="card preview">
           <h3>{t.sales.calc}</h3>
           {type === "progress_claim" && p ? (() => {
+            const modeB = p.terms.vat_mode === "B";
             const pc = (f: number) => `${Math.round(f * 10000) / 100}%`;
             return (
               <>
                 <dl>
                   <Row k={t.sales.workValue} v={toNum(work)} />
                   <Row k={`${t.form.recovery} (${pc(p.terms.recovery_pct)})`} v={-c.recovery} />
+                  {modeB && <Row k={`${t.form.retention} (${pc(p.terms.retention_pct)})`} v={-c.retention} />}
                   {toNum(discount) > 0 && <Row k={t.sales.discount} v={-toNum(discount)} />}
                   <Row k={t.sales.invoiceThis} v={c.vatBase} strong accent />
                   <Row k={t.form.vat} v={c.vat} />
                   <Row k={t.sales.invoiceTotalPrint} v={c.invoiceTotal} strong accent />
-                  <Row k={`${t.form.retention} (${pc(p.terms.retention_pct)})`} v={-c.retention} />
+                  {!modeB && <Row k={`${t.form.retention} (${pc(p.terms.retention_pct)})`} v={-c.retention} />}
                   <Row k={t.sales.toCollect} v={c.due} strong />
                   {p.partnerShare > 0 && <Row k={t.form.partnerShare} v={share} />}
                 </dl>
-                <p className="explain small">{t.sales.claimRule}</p>
+                <p className="explain small">{modeB ? t.sales.claimRuleB : t.sales.claimRule}</p>
               </>
             );
           })() : (
