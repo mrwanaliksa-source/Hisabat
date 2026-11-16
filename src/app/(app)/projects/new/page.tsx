@@ -20,7 +20,7 @@ export default async function NewProjectPage() {
   return (
     <div className="stack-lg">
       <h1 className="page-title">{t.newProject}</h1>
-      <ProjectForm t={t.form} sar={t.sar} customers={customers} partners={partners} lang={lang} />
+      <ProjectForm t={t.form} pp={t.pp} sar={t.sar} customers={customers} partners={partners} lang={lang} />
     </div>
   );
 }

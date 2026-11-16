@@ -14,10 +14,11 @@ export default async function Dashboard() {
 
   let kpis: { label: string; value: number; icon: string; tone?: string }[] = [];
   if (manager) {
-    const [{ data: tb }, { data: accts }, { data: partners }] = await Promise.all([
+    const [{ data: tb }, { data: accts }, { data: partners }, { data: held }] = await Promise.all([
       supabase.from("v_trial_balance").select("account_id,type,balance,debit,credit").eq("company_id", company.id),
       supabase.from("accounts").select("id,system_key,is_bank").eq("company_id", company.id),
       supabase.from("v_partner_balances").select("outstanding").eq("company_id", company.id),
+      supabase.from("v_partner_project_accounts").select("net_due_to_company").eq("company_id", company.id),
     ]);
     const byId = new Map((accts ?? []).map((a) => [a.id, a]));
     const rows = (tb ?? []) as TB[];
@@ -34,6 +35,9 @@ export default async function Dashboard() {
       },
       { label: t.kpi.partner, value: (partners ?? []).reduce((s, p) => s + Number(p.outstanding), 0), icon: "projects" },
     ];
+    if (held && held.length > 0) {
+      kpis.push({ label: t.pp.kpiHeld, value: held.reduce((s, h) => s + Number(h.net_due_to_company), 0), icon: "in" });
+    }
   }
 
   const { data: projects } = await supabase
@@ -62,13 +66,15 @@ export default async function Dashboard() {
       )}
 
       <section className="shortcuts">
-        <Link href="/sales" className="btn primary"><Icon name="plus" /> {t.shortcuts.addInvoice}</Link>
-        <Link href="/purchases" className="btn primary"><Icon name="camera" /> {t.shortcuts.captureExpense}</Link>
-        <Link href="/cash" className="btn soft"><Icon name="in" /> {t.shortcuts.receipt}</Link>
-        <Link href="/cash" className="btn soft"><Icon name="out" /> {t.shortcuts.payment}</Link>
+        {manager && <Link href="/sales/new" className="btn primary"><Icon name="plus" /> {t.shortcuts.addInvoice}</Link>}
+        {(manager || role === "expense") && <Link href="/purchases/new" className="btn primary"><Icon name="camera" /> {t.shortcuts.captureExpense}</Link>}
+        {manager && <Link href="/cash/receipt/new" className="btn soft"><Icon name="in" /> {t.shortcuts.receipt}</Link>}
+        {manager && <Link href="/purchases?unpaid=1" className="btn soft"><Icon name="out" /> {t.shortcuts.payment}</Link>}
+        {role !== "entry" && <Link href="/custody?new=1" className="btn soft"><Icon name="plus" /> {t.cus.request}</Link>}
+        {role === "entry" && <Link href="/sales/new" className="btn primary"><Icon name="plus" /> {t.shortcuts.addInvoice}</Link>}
       </section>
 
-      <section className="card">
+      {(manager || role === "entry") && <section className="card">
         <div className="card-head">
           <h2>{t.projects}</h2>
           <Link href="/projects" className="link">{t.projects} {lang === "ar" ? "←" : "→"}</Link>
@@ -99,7 +105,7 @@ export default async function Dashboard() {
         ) : (
           <p className="muted">{t.noProjects}</p>
         )}
-      </section>
+      </section>}
     </div>
   );
 }

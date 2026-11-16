@@ -5,7 +5,7 @@ import { createProject, type FormState } from "./actions";
 import type { Dict } from "@/lib/i18n";
 
 type Opt = { id: string; name: string };
-type Props = { t: Dict["form"]; sar: string; customers: Opt[]; partners: Opt[]; lang: "ar" | "en" };
+type Props = { t: Dict["form"]; pp: Dict["pp"]; sar: string; customers: Opt[]; partners: Opt[]; lang: "ar" | "en" };
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
@@ -15,7 +15,7 @@ const toNum = (s: string) => {
 };
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
-export function ProjectForm({ t, sar, customers, partners }: Props) {
+export function ProjectForm({ t, pp, sar, customers, partners }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(createProject, {});
 
   const [customerId, setCustomerId] = useState("");
@@ -24,7 +24,11 @@ export function ProjectForm({ t, sar, customers, partners }: Props) {
   const [rec, setRec] = useState("");
   const [recTouched, setRecTouched] = useState(false);
   const [ret, setRet] = useState("");
-  const [hasPartner, setHasPartner] = useState(false);
+  const [holder, setHolder] = useState<"company" | "partner">("company");
+  const [hasPartnerRaw, setHasPartner] = useState(false);
+  const hasPartner = holder === "partner" || hasPartnerRaw;
+  const [basis, setBasis] = useState<"collections" | "profit_at_close">("collections");
+  const effBasis = basis;
   const [partnerId, setPartnerId] = useState("");
   const [share, setShare] = useState("");
   const [sample, setSample] = useState("100000");
@@ -37,7 +41,7 @@ export function ProjectForm({ t, sar, customers, partners }: Props) {
   const vat = r2(vatBase * 0.15);
   const due = r2(vatBase + vat - retention);
   const netDue = r2(vatBase - retention);
-  const partnerShare = hasPartner ? r2(netDue * toNum(share) / 100) : 0;
+  const partnerShare = hasPartner && effBasis === "collections" ? r2(netDue * toNum(share) / 100) : 0;
 
   return (
     <form action={action} className="form-grid">
@@ -112,11 +116,26 @@ export function ProjectForm({ t, sar, customers, partners }: Props) {
         {/* ---------- partner ---------- */}
         <fieldset className="card">
           <legend>{t.partner}</legend>
-          <label className="toggle">
-            <input type="checkbox" name="has_partner" checked={hasPartner} onChange={(e) => setHasPartner(e.target.checked)} />
-            <span className="toggle-ui" aria-hidden />
-            {t.hasPartner}
-          </label>
+          <div className="field">
+            <span>{pp.holder}</span>
+            <div className="seg" role="radiogroup">
+              {(["company", "partner"] as const).map((k) => (
+                <label key={k} className={holder === k ? "on" : ""}>
+                  <input type="radio" name="contract_holder" value={k} checked={holder === k}
+                         onChange={() => { setHolder(k); setBasis(k === "partner" ? "profit_at_close" : "collections"); }} />
+                  {k === "company" ? pp.holderCompany : pp.holderPartner}
+                </label>
+              ))}
+            </div>
+          </div>
+          {holder === "partner" && <p className="note">{pp.holderHint}</p>}
+          {holder === "company" ? (
+            <label className="toggle">
+              <input type="checkbox" name="has_partner" checked={hasPartner} onChange={(e) => setHasPartner(e.target.checked)} />
+              <span className="toggle-ui" aria-hidden />
+              {t.hasPartner}
+            </label>
+          ) : <input type="hidden" name="has_partner" value="on" />}
           {hasPartner && (
             <div className="stack">
               {partners.length > 0 && (
@@ -134,8 +153,22 @@ export function ProjectForm({ t, sar, customers, partners }: Props) {
                          onChange={(e) => setShare(e.target.value)} />
                 </Field>
                 <Field label={t.partnerFrom}><input type="date" name="partner_from" /></Field>
+                <Field label={pp.basis}>
+                  <select name="basis" value={basis} onChange={(e) => setBasis(e.target.value as typeof basis)}>
+                    <option value="profit_at_close">{pp.basisProfit}</option>
+                    <option value="collections">{pp.basisCollections}</option>
+                  </select>
+                </Field>
+                {holder === "partner" && (
+                  <Field label={pp.vatPeriod}>
+                    <select name="partner_vat_period" defaultValue="quarterly">
+                      <option value="monthly">{pp.monthly}</option>
+                      <option value="quarterly">{pp.quarterly}</option>
+                    </select>
+                  </Field>
+                )}
               </div>
-              <p className="note">{t.partnerNote}</p>
+              <p className="note">{effBasis === "collections" ? t.partnerNote : `${pp.profitNote} ${pp.lossNote}`}</p>
             </div>
           )}
         </fieldset>
@@ -161,7 +194,7 @@ export function ProjectForm({ t, sar, customers, partners }: Props) {
             <Row k={t.retention} v={-retention} />
             <Row k={t.due} v={due} strong accent />
             <Row k={t.netDue} v={netDue} />
-            {hasPartner && <Row k={t.partnerShare} v={partnerShare} accent />}
+            {hasPartner && effBasis === "collections" && <Row k={t.partnerShare} v={partnerShare} accent />}
           </dl>
           <p className="muted small">{sar}</p>
         </div>

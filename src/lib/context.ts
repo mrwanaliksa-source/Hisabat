@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "./supabase/server";
 
-export type Role = "admin" | "reviewer" | "entry";
+export type Role = "admin" | "reviewer" | "entry" | "expense" | "custody";
 export type Company = { id: string; name_ar: string; name_en: string | null };
 
 /** Signed-in user, their companies, and the active company (cookie or first). */

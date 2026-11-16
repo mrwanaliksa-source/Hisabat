@@ -83,3 +83,6 @@ end $$;
 
 revoke execute on function public.create_project(uuid, jsonb) from public, anon;
 grant execute on function public.create_project(uuid, jsonb) to authenticated;
+
+-- refresh the API's view of the database
+notify pgrst, 'reload schema';

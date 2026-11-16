@@ -19,7 +19,8 @@ export async function createProject(_prev: FormState, fd: FormData): Promise<For
   const { supabase, company, role } = await getContext();
   if (!company || !canManage(role)) return { error: "Permission denied" };
 
-  const hasPartner = fd.get("has_partner") === "on";
+  const holder = fd.get("contract_holder") === "partner" ? "partner" : "company";
+  const hasPartner = holder === "partner" || fd.get("has_partner") === "on";
   const payload = {
     code: str(fd.get("code")),
     name_ar: str(fd.get("name_ar")),
@@ -43,6 +44,9 @@ export async function createProject(_prev: FormState, fd: FormData): Promise<For
     partner_name: hasPartner ? str(fd.get("partner_name")) : "",
     share_pct: hasPartner ? frac(fd.get("share_pct")) : "",
     partner_from: hasPartner ? str(fd.get("partner_from")) : "",
+    contract_holder: holder,
+    basis: hasPartner ? str(fd.get("basis")) : "",
+    partner_vat_period: holder === "partner" ? str(fd.get("partner_vat_period")) : "",
   };
 
   const { data, error } = await supabase.rpc("create_project", { p_company: company.id, p: payload });

@@ -1,0 +1,89 @@
+import Link from "next/link";
+import { getContext, canManage } from "@/lib/context";
+import { dict, getLang, money } from "@/lib/i18n";
+import { Icon } from "@/components/Icon";
+
+export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ unpaid?: string }> }) {
+  const sp = await searchParams;
+  const lang = await getLang();
+  const t = dict(lang);
+  const { supabase, company, role } = await getContext();
+  if (!company) return null;
+  const manager = canManage(role);
+
+  const [{ data: docs }, { data: bal }, { data: custodies }, { data: people }] = await Promise.all([
+    supabase.from("purchase_documents")
+      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,project:projects(code),supplier:parties(name_ar,name_en)")
+      .eq("company_id", company.id).order("issue_date", { ascending: false }).order("created_at", { ascending: false }).limit(300),
+    supabase.from("v_purchase_balances").select("id,paid,balance").eq("company_id", company.id),
+    supabase.from("v_custody").select("id,holder_name,purpose,balance,amount").eq("company_id", company.id).eq("status", "open"),
+    supabase.from("profiles").select("id,full_name"),
+  ]);
+  const b = new Map((bal ?? []).map((x) => [x.id, x]));
+  const who = new Map((people ?? []).map((p) => [p.id, p.full_name]));
+  let rows = docs ?? [];
+  if (sp.unpaid) rows = rows.filter((d) => Number(b.get(d.id)?.balance ?? 0) > 0.004);
+  type S = { name_ar: string; name_en: string | null } | null;
+
+  return (
+    <div className="stack-lg">
+      <div className="page-head">
+        <h1 className="page-title">{t.exp.title}</h1>
+        <Link href="/purchases/new" className="btn primary"><Icon name="camera" /> {t.exp.new}</Link>
+      </div>
+
+      {custodies && custodies.length > 0 && (
+        <section className="card">
+          <h2>{t.exp.openCustodies}</h2>
+          <div className="table-wrap">
+            <table>
+              <tbody>
+                {custodies.map((c) => (
+                  <tr key={c.id} className="custody-row">
+                    <td>{t.exp.custodyRow} <b>{c.holder_name}</b></td>
+                    <td className="muted">{c.purpose}</td>
+                    <td className="n num">{money(c.amount)}</td>
+                    <td className="n num"><b>{money(c.balance)}</b></td>
+                    <td><Link className="btn soft sm" href={`/custody/${c.id}`}>{t.cus.settle}</Link></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      <section className="card">
+        {rows.length > 0 ? (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>{t.exp.date}</th><th>{t.exp.project}</th><th>{t.exp.supplier}</th><th>{t.exp.details}</th>
+                  <th className="n">{t.exp.total}</th>{manager && <th className="n">{t.exp.balance}</th>}<th>{t.exp.by}</th></tr>
+              </thead>
+              <tbody>
+                {rows.map((d) => {
+                  const s = d.supplier as unknown as S;
+                  const p = d.project as unknown as { code: string } | null;
+                  const left = Number(b.get(d.id)?.balance ?? 0);
+                  return (
+                    <tr key={d.id}>
+                      <td className="num"><Link className="link" href={`/purchases/${d.id}`}>{d.issue_date}</Link></td>
+                      <td className="num">{p?.code ?? "—"}</td>
+                      <td>{s ? (lang === "en" && s.name_en) || s.name_ar : "—"}</td>
+                      <td className="clip"><Link href={`/purchases/${d.id}`}>{d.details ?? d.doc_number}</Link>
+                        {d.payment_source === "custody" && <span className="chip tiny">{t.nav.custody}</span>}</td>
+                      <td className="n num">{money(d.total_amount)}</td>
+                      {manager && <td className="n num">{left > 0.004 ? <b className="warn-text">{money(left)}</b> : "—"}</td>}
+                      <td className="muted small">{who.get(d.created_by ?? "") ?? ""}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : <p className="muted">{t.exp.none}</p>}
+      </section>
+    </div>
+  );
+}

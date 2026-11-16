@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { dict, getLang } from "@/lib/i18n";
 import { Icon } from "@/components/Icon";
 
-const SECTIONS = ["sales", "purchases", "cash", "review", "reports", "settings"] as const;
+const SECTIONS = ["reports"] as const;
 type Section = (typeof SECTIONS)[number];
 
 export default async function SoonPage({ params }: { params: Promise<{ section: string }> }) {

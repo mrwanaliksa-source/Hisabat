@@ -10,16 +10,25 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const t = dict(lang);
   const ctx = await getContext();
 
-  const items: NavItem[] = [
-    { href: "/", label: t.nav.home, icon: "home", ready: true },
-    { href: "/projects", label: t.nav.projects, icon: "projects", ready: true },
-    { href: "/sales", label: t.nav.sales, icon: "sales", ready: false },
-    { href: "/purchases", label: t.nav.purchases, icon: "purchases", ready: false },
-    { href: "/cash", label: t.nav.cash, icon: "cash", ready: false },
-    { href: "/review", label: t.nav.review, icon: "review", ready: false },
-    { href: "/reports", label: t.nav.reports, icon: "reports", ready: false },
-    { href: "/settings", label: t.nav.settings, icon: "settings", ready: false },
+  const all: (NavItem & { key: string })[] = [
+    { key: "home", href: "/", label: t.nav.home, icon: "home", ready: true },
+    { key: "projects", href: "/projects", label: t.nav.projects, icon: "projects", ready: true },
+    { key: "sales", href: "/sales", label: t.nav.sales, icon: "sales", ready: true },
+    { key: "purchases", href: "/purchases", label: t.nav.purchases, icon: "purchases", ready: true },
+    { key: "custody", href: "/custody", label: t.nav.custody, icon: "camera", ready: true },
+    { key: "cash", href: "/cash", label: t.nav.cash, icon: "cash", ready: true },
+    { key: "review", href: "/review", label: t.nav.review, icon: "review", ready: true },
+    { key: "reports", href: "/reports", label: t.nav.reports, icon: "reports", ready: false },
+    { key: "settings", href: "/settings", label: t.nav.settings, icon: "settings", ready: true },
   ];
+  const allowed: Record<string, string[]> = {
+    admin: all.map((i) => i.key),
+    reviewer: all.map((i) => i.key).filter((k) => k !== "settings"),
+    entry: ["home", "projects", "sales", "review"],
+    expense: ["home", "purchases", "custody"],
+    custody: ["home", "custody"],
+  };
+  const items: NavItem[] = all.filter((i) => (allowed[ctx.role ?? ""] ?? ["home"]).includes(i.key));
 
   const companyName = ctx.company ? (lang === "en" && ctx.company.name_en) || ctx.company.name_ar : "";
 

@@ -11,7 +11,7 @@ export default async function ProjectsPage() {
 
   const [{ data: projects }, { data: balances }] = await Promise.all([
     supabase.from("projects")
-      .select("id,code,name_ar,name_en,status,contract_value,customer:parties(name_ar,name_en)")
+      .select("id,code,name_ar,name_en,status,contract_value,customer:parties!projects_customer_id_fkey(name_ar,name_en)")
       .eq("company_id", company.id).order("code"),
     supabase.from("v_project_advance_retention")
       .select("project_id,works_certified,advance_outstanding,retention_outstanding")
