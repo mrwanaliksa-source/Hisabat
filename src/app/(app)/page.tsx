@@ -44,7 +44,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   }
 
   const [{ data: projects }, { data: prof }, { data: advret }, { data: docs }, { data: held }, { data: tb }, { data: accts },
-         { data: custodies }, { data: payables }, { data: agreements }] = await Promise.all([
+         { data: custodies }, { data: payables }, { data: agreements }, { data: pcash }, { data: advs }, { data: pcust }] = await Promise.all([
     supabase.from("projects").select("id,code,name_ar,name_en,status,contract_value,contract_holder,customer:parties!projects_customer_id_fkey(name_ar,name_en)")
       .eq("company_id", company.id).order("code"),
     supabase.from("v_project_profitability").select("project_id,revenue,direct_costs,partner_share_cost,gross_profit").eq("company_id", company.id),
@@ -56,7 +56,19 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     supabase.from("v_custody").select("balance").eq("company_id", company.id).eq("status", "open"),
     supabase.from("v_purchase_balances").select("balance").eq("company_id", company.id).gt("balance", 0),
     supabase.from("partner_agreements").select("project_id,share_pct,basis").eq("company_id", company.id),
+    supabase.from("v_project_cash").select("project_id,bank_net").eq("company_id", company.id),
+    supabase.from("v_supplier_advances").select("project_id,balance").eq("company_id", company.id).gt("balance", 0),
+    supabase.from("v_custody").select("project_id,balance").eq("company_id", company.id).eq("status", "open"),
   ]);
+  const BANK = new Map((pcash ?? []).map((x) => [x.project_id, Number(x.bank_net)]));
+  const sumBy = (rows: { project_id: string | null; balance: number }[] | null) => {
+    const m = new Map<string, number>();
+    for (const r of rows ?? []) if (r.project_id) m.set(r.project_id, (m.get(r.project_id) ?? 0) + Number(r.balance));
+    return m;
+  };
+  const ADV = sumBy(advs as { project_id: string | null; balance: number }[] | null);
+  const CUS = sumBy(pcust as { project_id: string | null; balance: number }[] | null);
+  const advTotal = (advs ?? []).reduce((s, x) => s + Number(x.balance), 0);
   const { data: nets } = await supabase.from("sales_documents").select("id,project_id,collectible_net,collectible_total")
     .eq("company_id", company.id).eq("status", "posted");
   const netRatio = new Map((nets ?? []).map((x) => [x.id, Number(x.collectible_total) > 0 ? Number(x.collectible_net) / Number(x.collectible_total) : 0]));
@@ -70,6 +82,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     { label: t.kpi.vat, value: -byKey("vat_output") - byKey("vat_input"), icon: "sales" },
     { label: t.dash.payables, value: (payables ?? []).reduce((s, x) => s + Number(x.balance), 0), icon: "out" },
     { label: t.dash.custodyOpen, value: (custodies ?? []).reduce((s, x) => s + Number(x.balance), 0), icon: "camera" },
+    ...(advTotal > 0.004 ? [{ label: t.adv.waiting, value: advTotal, icon: "out" }] : []),
   ];
 
   const P = new Map((prof ?? []).map((x) => [x.project_id, x]));
@@ -120,7 +133,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <div className="project-cards">
           {visible.map((p) => {
             const f = P.get(p.id), a = A.get(p.id), d = D.get(p.id) ?? { billed: 0, collected: 0, due: 0, collectedNet: 0 }, g = G.get(p.id);
-            const netCash = d.collectedNet - Number(f?.direct_costs ?? 0) - Number(f?.partner_share_cost ?? 0);
+            const advOpen = ADV.get(p.id) ?? 0, cusOpen = CUS.get(p.id) ?? 0;
+            // partner-held: what actually moved in our bank for this project; company-held: collected net − costs − share − money out not yet costed
+            const netCash = p.contract_holder === "partner" ? (BANK.get(p.id) ?? 0)
+              : d.collectedNet - Number(f?.direct_costs ?? 0) - Number(f?.partner_share_cost ?? 0) - advOpen - cusOpen;
             const contract = Number(p.contract_value), certified = Number(a?.works_certified ?? 0);
             const progress = contract > 0 ? Math.min(100, (certified / contract) * 100) : 0;
             const profit = Number(f?.gross_profit ?? 0);
@@ -153,15 +169,17 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                   <div><dt>{t.dash.share}{profitBasisOpen ? " *" : ""}</dt><dd className="num">{money(f?.partner_share_cost ?? 0)}</dd></div>
                   {Number(a?.advance_outstanding ?? 0) > 0 && <div><dt>{t.dash.advLeft}</dt><dd className="num">{money(a?.advance_outstanding)}</dd></div>}
                   {Number(a?.retention_outstanding ?? 0) > 0 && <div><dt>{t.dash.retLeft}</dt><dd className="num">{money(a?.retention_outstanding)}</dd></div>}
+                  {advOpen > 0.004 && <div className="warn"><dt>{t.adv.waiting}</dt><dd className="num">{money(advOpen)}</dd></div>}
+                  {cusOpen > 0.004 && <div><dt>{t.dash.custodyOpen}</dt><dd className="num">{money(cusOpen)}</dd></div>}
                   {partnerHeld && <div className="hl"><dt>{t.dash.atPartner}</dt><dd className="num">{money(H.get(p.id) ?? 0)}</dd></div>}
                 </dl>
 
                 <div className={`pc-profit ${profit < 0 ? "neg" : ""}`}>
                   <span>{t.dash.profit}</span><b className="num">{money(profit)} <small>{t.sar}</small></b>
                 </div>
-                {!partnerHeld && (
-                  <div className={`pc-cash ${netCash < 0 ? "neg" : ""}`} title={t.dash.cashHint}>
-                    <span>{t.dash.cash}</span><b className="num">{money(netCash)} <small>{t.sar}</small></b>
+                {(
+                  <div className={`pc-cash ${netCash < 0 ? "neg" : ""}`} title={partnerHeld ? t.dash.cashHintBank : t.dash.cashHint}>
+                    <span>{partnerHeld ? t.dash.cashBank : t.dash.cash}</span><b className="num">{money(netCash)} <small>{t.sar}</small></b>
                   </div>
                 )}
                 {!partnerHeld && Number(a?.advance_outstanding ?? 0) > 0 && profit < 0 && <p className="muted tiny-note">{t.dash.cashHint}</p>}

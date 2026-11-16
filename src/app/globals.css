@@ -389,3 +389,6 @@ details.inline-menu .pop { position: absolute; inset-inline-end: 0; top: calc(10
 .pc-cash b { font-size: 1rem; }
 .pc-cash.neg b { color: var(--red); }
 .explain { background: #f1f6fb; border-inline-start: 3px solid #8fb4d8; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; } .explain p { margin: 0; color: #2c4660; } .seg label[aria-disabled="true"]:not(.on) { opacity: .45; cursor: not-allowed; }
+.group-row td { background: #f6f8fa; border-top: 1px solid #e3e8ee; }
+.apply-adv { border: 1px dashed #c9d6e2; border-radius: 10px; padding: 12px; } .apply-adv h3 { margin: 0; font-size: 14px; }
+.chip.warn { background: #fff4e0; color: #9a5b00; } .chip.ok { background: #e6f5ee; color: #17694a; } .adv-row td { background: #fffbf3; }

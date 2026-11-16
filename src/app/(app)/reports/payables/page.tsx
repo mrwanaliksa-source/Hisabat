@@ -13,11 +13,13 @@ export default async function PayablesReport({ searchParams }: { searchParams: P
   if (!company) return null;
   if (!canManage(role)) redirect("/");
 
-  const [{ data: bal }, { data: docs }] = await Promise.all([
+  const [{ data: bal }, { data: docs }, { data: advs }] = await Promise.all([
     supabase.from("v_purchase_balances").select("id,balance").eq("company_id", company.id).gt("balance", 0),
     supabase.from("purchase_documents").select("id,issue_date,doc_number,details,total_amount,supplier_id,project:projects(code),supplier:parties(name_ar,name_en)")
       .eq("company_id", company.id).eq("status", "posted").lte("issue_date", to).order("issue_date"),
+    supabase.from("v_supplier_advances").select("id,supplier_name,pay_date,notes,amount,balance").eq("company_id", company.id).gt("balance", 0).order("pay_date"),
   ]);
+  const advTotal = (advs ?? []).reduce((s, a) => s + Number(a.balance), 0);
   const left = new Map((bal ?? []).map((b) => [b.id, Number(b.balance)]));
   const rows = (docs ?? []).filter((d) => (left.get(d.id) ?? 0) > 0.004);
   type N = { name_ar: string; name_en: string | null } | null;
@@ -38,6 +40,20 @@ export default async function PayablesReport({ searchParams }: { searchParams: P
           <table><tbody>{[...bySupplier.values()].map((s) => <tr key={s.name}><td>{s.name}</td><td className="n num"><b>{money(s.total)}</b></td></tr>)}</tbody>
             <tfoot><tr><th>{t.rep.total}</th><th className="n num">{money(total)}</th></tr></tfoot></table>
         ) : <p className="muted">{t.rep.none}</p>}
+      </section>
+
+      <section className="card">
+        <h2>{t.adv.title}</h2>
+        <p className="muted small">{t.adv.chase}</p>
+        {advs && advs.length > 0 ? (
+          <table>
+            <thead><tr><th>{t.adv.supplier}</th><th>{t.exp.date}</th><th>{t.adv.notes}</th><th className="n">{t.rep.aging.days}</th><th className="n">{t.adv.waiting}</th></tr></thead>
+            <tbody>{advs.map((a) => (
+              <tr key={a.id}><td>{a.supplier_name}</td><td className="num">{a.pay_date}</td><td className="muted">{a.notes}</td>
+                <td className="n num">{daysBetween(a.pay_date, to)}</td><td className="n num"><b>{money(a.balance)}</b></td></tr>))}</tbody>
+            <tfoot><tr><th colSpan={4}>{t.rep.total}</th><th className="n num">{money(advTotal)}</th></tr></tfoot>
+          </table>
+        ) : <p className="muted">{t.adv.none}</p>}
       </section>
       {rows.length > 0 && (
         <section className="card">

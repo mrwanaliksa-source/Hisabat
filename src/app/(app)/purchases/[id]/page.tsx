@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
-import { paySupplier } from "./actions";
+import { paySupplier, applyAdvance } from "./actions";
 
 type Params = Promise<{ id: string }>;
 
@@ -24,12 +24,15 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
   const proj = d.project as unknown as N | null;
   const supp = d.supplier as unknown as N;
 
-  const [{ data: bal }, { data: lines }, { data: banks }, { data: who }, photo] = await Promise.all([
+  const canApply = ["admin", "reviewer", "expense"].includes(role ?? "");
+  const [{ data: bal }, { data: lines }, { data: banks }, { data: who }, photo, { data: advs }] = await Promise.all([
     supabase.from("v_purchase_balances").select("paid,balance").eq("id", id).maybeSingle(),
     manager && d.journal_entry_id ? supabase.from("journal_lines").select("id,debit,credit,account:accounts(code,name_ar,name_en)").eq("entry_id", d.journal_entry_id) : Promise.resolve({ data: null }),
     manager ? supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).order("code") : Promise.resolve({ data: null }),
     supabase.from("profiles").select("full_name").eq("id", d.created_by ?? "").maybeSingle(),
     d.attachment_path ? supabase.storage.from("attachments").createSignedUrl(d.attachment_path, 600) : Promise.resolve({ data: null }),
+    canApply ? supabase.from("v_supplier_advances").select("id,pay_date,notes,balance").eq("supplier_id", d.supplier_id).gt("balance", 0).order("pay_date")
+             : Promise.resolve({ data: null }),
   ]);
   const left = Number(bal?.balance ?? 0);
   const photoUrl = (photo as { data: { signedUrl: string } | null })?.data?.signedUrl;
@@ -44,7 +47,7 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
         </div>
         <Link href="/purchases" className="btn ghost">{t.back}</Link>
       </div>
-      {sp.ok && <p className="alert ok">✓ {t.exp.posted}</p>}
+      {sp.ok && <p className="alert ok">✓ {sp.ok === "advance" ? t.adv.appliedOk : t.exp.posted}</p>}
       {sp.err && <p className="alert error">{sp.err}</p>}
 
       <div className="grid-2 top">
@@ -73,6 +76,19 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
             <p className="chips"><span className="chip">
               {d.payment_source === "credit" ? t.exp.payCredit : d.payment_source === "custody" ? t.nav.custody : t.exp.paid}
             </span></p>
+          )}
+          {canApply && left > 0.004 && advs && advs.length > 0 && (
+            <form action={applyAdvance} className="stack apply-adv">
+              <h3>{t.adv.applyTitle}</h3>
+              <input type="hidden" name="id" value={id} />
+              <div className="grid-2">
+                <label className="field"><span>{t.adv.choose}</span>
+                  <select name="advance">{advs.map((a) => <option key={a.id} value={a.id}>{a.pay_date} · {a.notes} — {t.adv.left} {money(a.balance)}</option>)}</select></label>
+                <label className="field"><span>{t.cash.payAmount}</span>
+                  <input name="amount" inputMode="decimal" dir="ltr" defaultValue={Math.min(left, Number(advs[0].balance))} /></label>
+              </div>
+              <button className="btn soft" data-act="apply-advance">{t.adv.apply}</button>
+            </form>
           )}
           {manager && left > 0.004 && (
             <form action={paySupplier} className="stack">

@@ -12,11 +12,13 @@
 
 ```sql
 select proname from pg_proc
- where proname in ('allocate_receipt_many','record_partner_transfer','post_expense','reverse_receipt','update_project','update_partner_terms')
+ where proname in ('allocate_receipt_many','record_partner_transfer','post_expense','reverse_receipt','update_project','update_partner_terms','pay_supplier_advance')
    and pronamespace = 'public'::regnamespace
 union all
 select 'partner_kept' from pg_constraint
- where conname = 'partner_transfers_direction_check' and pg_get_constraintdef(oid) like '%partner_kept_share%';
+ where conname = 'partner_transfers_direction_check' and pg_get_constraintdef(oid) like '%partner_kept_share%'
+union all
+select 'project_cash' from pg_views where viewname = 'v_project_cash';
 ```
 
 | النتيجة | ابدأ من |
@@ -28,7 +30,9 @@ select 'partner_kept' from pg_constraint
 | من غير `update_project` | `012` |
 | من غير `update_partner_terms` | `013` |
 | من غير `partner_kept` | `014` |
-| السبعة موجودين | فاضل `015` لو المشروع مش متسجل ✅ |
+| من غير `pay_supplier_advance` | `016` (و`015` لو المشروع مش متسجل) |
+| من غير `project_cash` | `018` |
+| التسعة موجودين | خلصت ✅ |
 
 | # | الملف | لازم يطلع |
 |---|---|---|
@@ -44,6 +48,9 @@ select 'partner_kept' from pg_constraint
 | 013 | `013_partner_terms.sql` — تعديل الشريك ونسبته وباسم مين العقد | Success |
 | 014 | `014_partner_kept.sql` — «الشريك خصم نسبته» و«الشريك خصم زكاة» | Success |
 | 015 | `015_onboard_hafr_albatin.sql` — إدخال مشروع حفر الباطن من نصه (**مرة واحدة**، وعهدة أدهم على المستخدم `a.elsaegh`) | جدول فيه صافي البنك 149,660.15 وعهدة 7,000 |
+| 016 | `016_supplier_advances.sql` — دفعات للموردين بدون فواتير وخصمها من الفواتير بعدين | Success |
+| 017 | `017_abu_ahmed_to_advance.sql` — يحوّل الـ 5,000 بتاعة أبو أحمد من مصروف لدفعة بدون فاتورة (**مرة واحدة**) | جدول فيه دفعة أبو أحمد 5,000 |
+| 018 | `018_project_cash.sql` — نقدية كل مشروع مطابقة للبنك (للرئيسية) | Success |
 
 **لو طلع أي خطأ تاني:** وقّف وابعت الرسالة.
 
@@ -108,6 +115,7 @@ select 'partner_kept' from pg_constraint
 - **المشروعات**: **تعديل المشروع** (المحتجز والاسترداد لحد أول مستخلص)، دفعة مقدمة، استرداد، محتجز، شريك (من التحصيل أو من الربح عند الإقفال)، عقد باسم الشركة أو الشريك، إقفال المشروع.
 - **تعديل المشروع ← الشركة الشريكة وطريقة الحسبة**: شرح بالكلام لطريقة حساب النسبة وباسم مين العقد، وتعديل النسبة (لو اتحسبت حصص قبل كده، النسبة الجديدة تسري من تاريخ تختاره والقديم يفضل زي ما هو)، وإضافة شريك لمشروع مالوش.
 - **صفحة المشروع ← الرصيد الافتتاحي** (للأدمن بس): لو الكاش الفعلي مختلف عن الرصيد المرحل تكتبه **مرة واحدة**، والفرق يتسجل تسوية، وبعدها يتقفل.
+- **المصروفات ← دفعة لمورد بدون فاتورة**: الفلوس بتتسجل على المورد مش مصروف، وتظهر في «دفعات بدون فواتير» لكل مورد بعمرها. لما الفاتورة تيجي: مصروف جديد ← طريقة الدفع «خصم من دفعة مقدمة»، أو من صفحة الفاتورة ← «خصم من الدفعة المقدمة».
 - **المبيعات والمراجعة**: دفعة مقدمة / مستخلص / إفراج عن محتجز. في المستخلص الحسبة بتقولك خطوة بخطوة: الأعمال − الاسترداد = **قيمة الفاتورة**، + الضريبة = **إجمالي الفاتورة**، − المحتجز = **المطلوب تحصيله**.
 - **المصروفات**: بتترحّل فورًا، الضريبة 15% تلقائي (أو «بدون ضريبة»)، الصورة اختيارية.
 - **العهد**: طلب ← موافقة المدير الأول ← موافقة المدير التاني والصرف ← تصفية بالفواتير.

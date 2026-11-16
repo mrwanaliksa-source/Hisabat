@@ -14,3 +14,14 @@ export async function paySupplier(fd: FormData) {
   revalidatePath(`/purchases/${id}`); revalidatePath("/purchases"); revalidatePath("/");
   redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=paid"}`);
 }
+
+export async function applyAdvance(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = String(fd.get("id"));
+  const { error } = await supabase.rpc("apply_supplier_advance", {
+    p_doc: id, p_advance: String(fd.get("advance")), p_amount: toNum(fd.get("amount")),
+    p_date: new Date().toISOString().slice(0, 10),
+  });
+  revalidatePath(`/purchases/${id}`); revalidatePath("/purchases"); revalidatePath("/");
+  redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=advance"}`);
+}

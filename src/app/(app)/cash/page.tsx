@@ -23,7 +23,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
   const pn = new Map((parties ?? []).map((p) => [p.id, (lang === "en" && p.name_en) || p.name_ar]));
 
   // money out: suppliers (from bank/cash only), custody disbursed, partner transfers & share payments
-  const [{ data: banks }, { data: tb }, { data: sp_ }, { data: cus }, { data: pt }, { data: ps }, { data: supp }] = await Promise.all([
+  const [{ data: banks }, { data: tb }, { data: sp_ }, { data: cus }, { data: pt }, { data: ps }, { data: supp }, { data: advs }] = await Promise.all([
     supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).order("code"),
     supabase.from("v_trial_balance").select("account_id,balance").eq("company_id", company.id),
     supabase.from("supplier_payments").select("id,pay_date,amount,bank_account_id,supplier_id,reference,doc:purchase_documents(id,details,doc_number)").eq("company_id", company.id).order("pay_date", { ascending: false }).limit(200),
@@ -31,6 +31,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
     supabase.from("partner_transfers").select("id,transfer_date,amount,bank_account_id,partner_id,reference,project_id").eq("company_id", company.id).eq("direction", "to_partner"),
     supabase.from("partner_settlements").select("id,settle_date,amount,bank_account_id,partner_id,reference").eq("company_id", company.id),
     supabase.from("parties").select("id,name_ar,name_en").eq("company_id", company.id).eq("kind", "supplier"),
+    supabase.from("v_supplier_advances").select("id,pay_date,amount,bank_account_id,supplier_name,notes,balance").eq("company_id", company.id),
   ]);
   const bankName = new Map((banks ?? []).map((b) => [b.id, `${b.code} · ${(lang === "en" && b.name_en) || b.name_ar}`]));
   const bal = new Map((tb ?? []).map((r) => [r.account_id, Number(r.balance)]));
@@ -42,6 +43,9 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
       return { key: "s" + x.id, date: x.pay_date, type: t.cash.ptSupplier, payee: sn.get(x.supplier_id) ?? "", detail: d?.details ?? d?.doc_number ?? "",
                account: bankName.get(x.bank_account_id) ?? "", amount: Number(x.amount), href: d ? `/purchases/${d.id}` : undefined };
     }),
+    ...(advs ?? []).map((x) => ({ key: "a" + x.id, date: x.pay_date, type: t.cash.ptAdvance, payee: x.supplier_name,
+               detail: `${x.notes ?? ""}${Number(x.balance) > 0.004 ? ` · ${t.adv.waiting} ${money(x.balance)}` : ""}`,
+               account: bankName.get(x.bank_account_id) ?? "", amount: Number(x.amount), href: "/purchases#advances" })),
     ...(cus ?? []).map((x) => ({ key: "c" + x.id, date: x.disbursed_on as string, type: t.cash.ptCustody, payee: x.holder_name, detail: x.purpose,
                account: "", amount: Number(x.amount), href: `/custody/${x.id}` })),
     ...(pt ?? []).map((x) => ({ key: "t" + x.id, date: x.transfer_date, type: t.cash.ptPartnerOut, payee: pn.get(x.partner_id) ?? "", detail: x.reference ?? "",

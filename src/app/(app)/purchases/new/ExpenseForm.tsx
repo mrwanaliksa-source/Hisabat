@@ -7,16 +7,20 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Dict } from "@/lib/i18n";
 
 type Opt = { id: string; name: string };
-type Props = { t: Dict; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[] };
+type Adv = { id: string; supplier: string; balance: number; projectId: string | null };
+type Props = { t: Dict; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[] };
 
 const validVat = (v: string) => /^3\d{13}3$/.test(v.replace(/\D/g, ""));
 
-export function ExpenseForm({ t, companyId, projects, banks, suppliers }: Props) {
+export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(createExpense, {});
   const [supplier, setSupplier] = useState("");
   const [vatNo, setVatNo] = useState("");
   const [net, setNet] = useState("");
   const [noVat, setNoVat] = useState(false);
+  const defPay = banks[1] ? `account:${banks[1].id}` : banks[0] ? `account:${banks[0].id}` : "credit";
+  const [pay, setPay] = useState(defPay);
+  const adv = pay.startsWith("advance:") ? advances.find((a) => a.id === pay.slice(8)) ?? null : null;
   const [photo, setPhoto] = useState<{ path: string; hash: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
@@ -76,7 +80,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers }: Props)
           </label>
           <label className="field">
             <span>{t.exp.supplier}<b className="req"> *</b></span>
-            <input name="supplier_name" required list="suppliers" value={supplier} onChange={(e) => onSupplier(e.target.value)} />
+            <input name="supplier_name" required list="suppliers" value={adv ? adv.supplier : supplier} readOnly={!!adv} className={adv ? "computed" : undefined} onChange={(e) => onSupplier(e.target.value)} />
             <datalist id="suppliers">{suppliers.map((s) => <option key={s.name} value={s.name} />)}</datalist>
           </label>
           <label className="field">
@@ -116,11 +120,23 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers }: Props)
         <legend>{t.exp.payment}</legend>
         <label className="field">
           <span>{t.exp.payAccount}</span>
-          <select name="pay" defaultValue={banks[1] ? `account:${banks[1].id}` : banks[0] ? `account:${banks[0].id}` : "credit"}>
+          <select name="pay" value={pay} onChange={(e) => setPay(e.target.value)}>
             {banks.map((b) => <option key={b.id} value={`account:${b.id}`}>{b.name}</option>)}
             <option value="credit">{t.exp.payCredit}</option>
+            {advances.length > 0 && (
+              <optgroup label={t.adv.payFrom}>
+                {advances.map((a) => <option key={a.id} value={`advance:${a.id}`}>{a.supplier} — {t.adv.left} {fmt(a.balance)}</option>)}
+              </optgroup>
+            )}
           </select>
         </label>
+        {adv && (
+          <p className="alert ok small">
+            {t.adv.payFrom}: <b className="num">{fmt(Math.min(total, adv.balance))}</b>
+            {total > adv.balance && <> · {t.exp.payCredit}: <b className="num">{fmt(r2(total - adv.balance))}</b></>}
+            <br /><span className="muted">{t.adv.leftNote}</span>
+          </p>
+        )}
         <label className="field">
           <span>{t.exp.photo}</span>
           <input type="file" accept="image/*,application/pdf" capture="environment" onChange={onPhoto} />
