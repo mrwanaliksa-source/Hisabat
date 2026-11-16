@@ -176,7 +176,7 @@ const ar = {
     totalsMismatch: "قبل الضريبة + الضريبة لا يساوي الإجمالي", save: "حفظ المصروف", saving: "جارٍ الحفظ…",
     by: "أدخله", paid: "مدفوع", balance: "متبقي للمورد", payNow: "سداد للمورد", custodyRow: "عهدة على",
     openCustodies: "عهد مفتوحة", posted: "تم تسجيل المصروف", addVat: "احسب 15%", uploading: "جارٍ رفع الصورة…",
-    viewPhoto: "عرض الصورة", byPartner: "دفعها الشريك", byPartnerFrom: "من فلوس المشروع اللي مع", partnerReclaims: "الشريك هيسترجع ضريبة الفاتورة دي في إقراره (الضريبة مش هتتحسب تكلفة)", noVat: "بدون ضريبة", vatAuto: "تحسب تلقائيًا 15%",
+    viewPhoto: "عرض الصورة", byPartner: "دفعها الشريك", byPartnerFrom: "من فلوس المشروع اللي مع", ofWhichAdv: "منها دفعة منتظرة فاتورة", ofWhichCus: "منها عهدة لم تُصفَّ", partnerReclaims: "الشريك هيسترجع ضريبة الفاتورة دي في إقراره (الضريبة مش هتتحسب تكلفة)", noVat: "بدون ضريبة", vatAuto: "تحسب تلقائيًا 15%",
   },
   cus: {
     title: "العهد", request: "طلب عهدة", none: "لا توجد عهد.", amount: "المبلغ المطلوب", purpose: "الغرض من العهدة",
@@ -406,7 +406,7 @@ const en: Dict = {
     totalsMismatch: "Amount + VAT does not equal the total", save: "Save expense", saving: "Saving…",
     by: "Entered by", paid: "Paid", balance: "Owed to supplier", payNow: "Pay supplier", custodyRow: "Custody held by",
     openCustodies: "Open custodies", posted: "Expense recorded", addVat: "Add 15%", uploading: "Uploading photo…",
-    viewPhoto: "View photo", byPartner: "Paid by the partner", byPartnerFrom: "From the project money held by", partnerReclaims: "The partner reclaims this invoice's VAT in its return (VAT is not a cost)", noVat: "No VAT", vatAuto: "Calculated automatically at 15%",
+    viewPhoto: "View photo", byPartner: "Paid by the partner", byPartnerFrom: "From the project money held by", ofWhichAdv: "incl. payments awaiting invoice", ofWhichCus: "incl. custody not yet settled", partnerReclaims: "The partner reclaims this invoice's VAT in its return (VAT is not a cost)", noVat: "No VAT", vatAuto: "Calculated automatically at 15%",
   },
   cus: {
     title: "Custody", request: "Request custody", none: "No custody yet.", amount: "Amount requested", purpose: "Purpose",

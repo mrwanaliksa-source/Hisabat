@@ -7,8 +7,8 @@
 --   OPEN-HAFR-09  مصروفات متنوعة            13,000
 --   دفعة أبو أحمد (بدون فاتورة)             5,000   (لو لسه ما اتخصمتش من فاتورة)
 --   عهدة أدهم                               7,000   (وأي فواتير اتصفّت منها على حفر الباطن)
--- والـ 5,800 (OPEN-HAFR-10) بتفضل على جزء كرم: نسبة مروان 1% من PO كرم = 15,905.80
---   اتدفع منها 5,800 والمتبقي 10,105.80 مستحق (يبان في صفحة المصروف)
+-- والـ 5,800 (OPEN-HAFR-10) بتفضل على جزء كرم: دفعة من نسبة مروان 1% من PO كرم
+--   (إجمالي النسبة 15,905.80، الباقي 10,105.80 — مكتوب في بيان المصروف)
 -- بنك كرم ما بيتغيرش (الفلوس طلعت منه فعلًا)، وبيتسجل: جزء الفاتح مديون لجزء كرم بالمبلغ.
 -- =====================================================================
 do $$
@@ -85,28 +85,13 @@ begin
     v_note := v_note || ' عهدة أدهم مش لاقيها على HAFR-01 فما اتنقلتش.';
   end if;
 
-  -- 4) نسبة مروان على PO كرم: الـ 5,800 تتحول لمستند نسبة 1% كامل (15,905.80) اتدفع منه 5,800
-  select * into r from public.purchase_documents where company_id = v_co and project_id = p1 and doc_number = 'OPEN-HAFR-10';
-  if r.id is null then raise exception 'مش لاقي مصروف نسبة مروان OPEN-HAFR-10 على HAFR-01 — مفيش حاجة اتسجلت'; end if;
-  select * into sp from public.supplier_payments where purchase_document_id = r.id;
-  if (select count(*) from public.supplier_payments where purchase_document_id = r.id) <> 1 or r.total_amount <> 5800 then
-    raise exception 'مصروف نسبة مروان مش زي المتوقع (5,800 بسداد واحد) — مفيش حاجة اتسجلت';
-  end if;
-  alter table public.journal_entries disable trigger journal_entries_immutable;
-  update public.supplier_payments set journal_entry_id = null where id = sp.id;
-  update public.purchase_documents set journal_entry_id = null where id = r.id;
-  delete from public.journal_lines   where entry_id in (r.journal_entry_id, sp.journal_entry_id);
-  delete from public.journal_entries where id in (r.journal_entry_id, sp.journal_entry_id);
-  delete from public.supplier_payments where id = sp.id;
-  delete from public.purchase_documents where id = r.id;
-  alter table public.journal_entries enable trigger journal_entries_immutable;
+  -- 4) نسبة مروان على PO كرم: الـ 5,800 دفعة من نسبة 1% (بيتسجل اللي اندفع بس) — تصحيح البيان
+  update public.purchase_documents
+     set details = 'دفعة من نسبة مروان 1% من PO كرم — إجمالي النسبة 15,905.80، اتدفع 5,800، الباقي 10,105.80 (من السحب النقدي 40,000)'
+   where company_id = v_co and project_id = p1 and doc_number = 'OPEN-HAFR-10';
   alter table public.journal_lines      enable trigger journal_lines_immutable;
   alter table public.purchase_documents enable trigger purchase_doc_guard;
 
-  v_comm := public.post_expense(v_co, jsonb_build_object('project_id', p1, 'issue_date', r.issue_date, 'payment', 'credit',
-    'supplier_id', r.supplier_id, 'doc_number', 'COMM-HAFR-01', 'net_amount', 15905.80,
-    'details', 'نسبة مروان 1% من PO كرم (1,590,579.50 قبل الضريبة) — المدفوع والمتبقي في خانة السداد'));
-  perform public.pay_purchase(v_comm, sp.pay_date, 5800.00, sp.bank_account_id, 'OPEN-HAFR-10 — من السحب النقدي 40,000');
 
   -- السلفة: جزء الفاتح مديون لجزء كرم
   perform public.post_inter_part(v_co, '2026-09-13', p1, p1, p2, v_moved, null,

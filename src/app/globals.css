@@ -393,3 +393,4 @@ details.inline-menu .pop { position: absolute; inset-inline-end: 0; top: calc(10
 .apply-adv { border: 1px dashed #c9d6e2; border-radius: 10px; padding: 12px; } .apply-adv h3 { margin: 0; font-size: 14px; }
 .chip.warn { background: #fff4e0; color: #9a5b00; } .chip.ok { background: #e6f5ee; color: #17694a; } .adv-row td { background: #fffbf3; }
 .company-list { display: flex; flex-direction: column; gap: 8px; } .company-pick { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid #dfe5ec; border-radius: 10px; background: #fff; text-decoration: none; color: inherit; } .company-pick:hover { border-color: var(--teal-2); background: #f3faf8; }
+.kpi-sub { display: block; font-size: .78rem; margin-top: 2px; } .pc-grid small { display: block; font-size: .72rem; }

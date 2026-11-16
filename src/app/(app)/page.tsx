@@ -147,7 +147,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               : d.collectedNet - Number(f?.direct_costs ?? 0) - Number(f?.partner_share_cost ?? 0) - advOpen - cusOpen;
             const contract = Number(p.contract_value), certified = Number(a?.works_certified ?? 0);
             const progress = contract > 0 ? Math.min(100, (certified / contract) * 100) : 0;
-            const profit = Number(f?.gross_profit ?? 0);
+            const profit = Number(f?.gross_profit ?? 0) - (ADV.get(p.id) ?? 0) - (CUS.get(p.id) ?? 0);
             const cust = p.customer as unknown as N;
             const partnerHeld = p.contract_holder === "partner";
             const profitBasisOpen = g?.basis === "profit_at_close" && p.status !== "closed";
@@ -175,14 +175,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 <dl className="pc-grid">
                   <div><dt>{t.dash.collected}</dt><dd className="num">{money(d.collected)}</dd></div>
                   <div className={d.due > 0.004 ? "warn" : ""}><dt>{t.dash.due}</dt><dd className="num">{money(d.due)}</dd></div>
-                  <div><dt>{t.dash.costs}</dt><dd className="num">{money(f?.direct_costs ?? 0)}</dd></div>
+                  <div><dt>{t.dash.costs}</dt><dd className="num">{money(Number(f?.direct_costs ?? 0) + advOpen + cusOpen)}</dd>
+                    {advOpen > 0.004 && <small className="warn-text">{t.exp.ofWhichAdv} {money(advOpen)}</small>}
+                    {cusOpen > 0.004 && <small className="warn-text">{t.exp.ofWhichCus} {money(cusOpen)}</small>}</div>
                   <div><dt>{t.dash.share}{profitBasisOpen ? " *" : ""}</dt><dd className="num">{money(f?.partner_share_cost ?? 0)}</dd></div>
                   {Number(a?.advance_outstanding ?? 0) > 0 && <div><dt>{t.dash.advLeft}</dt><dd className="num">{money(a?.advance_outstanding)}</dd></div>}
                   {Number(a?.retention_outstanding ?? 0) > 0 && <div><dt>{t.dash.retLeft}</dt><dd className="num">{money(a?.retention_outstanding)}</dd></div>}
                   {Math.abs(IP.get(p.id) ?? 0) > 0.004 && <div className={(IP.get(p.id) ?? 0) < 0 ? "warn" : "hl"}><dt>{t.parts.loan}</dt>
                     <dd className="num">{(IP.get(p.id) ?? 0) > 0 ? t.parts.owed : t.parts.owes} {money(Math.abs(IP.get(p.id) ?? 0))}</dd></div>}
-                  {advOpen > 0.004 && <div className="warn"><dt>{t.adv.waiting}</dt><dd className="num">{money(advOpen)}</dd></div>}
-                  {cusOpen > 0.004 && <div><dt>{t.dash.custodyOpen}</dt><dd className="num">{money(cusOpen)}</dd></div>}
                   {partnerHeld && <div className="hl"><dt>{t.dash.atPartner}</dt><dd className="num">{money(H.get(p.id) ?? 0)}</dd></div>}
                 </dl>
 

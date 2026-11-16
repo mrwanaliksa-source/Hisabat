@@ -48,6 +48,13 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
   const bankOf = (pid?: string) => ((bankList ?? []) as { id: string; project_id: string | null }[]).find((b) => b.project_id === pid)?.id;
   const ipMap = new Map((ipRows ?? []).map((r: { project_id: string; balance: number }) => [r.project_id, Number(r.balance)]));
   const cashMap = new Map((cashRows ?? []).map((r: { project_id: string; bank_net: number }) => [r.project_id, Number(r.bank_net)]));
+  // money already out but not yet an expense: supplier payments awaiting invoices + open custody
+  const [{ data: openAdv }, { data: openCus }] = manager ? await Promise.all([
+    supabase.from("v_supplier_advances").select("balance").eq("project_id", id).gt("balance", 0),
+    supabase.from("v_custody").select("balance").eq("project_id", id).eq("status", "open"),
+  ]) : [{ data: [] }, { data: [] }];
+  const advOpenP = (openAdv ?? []).reduce((s, x) => s + Number(x.balance), 0);
+  const cusOpenP = (openCus ?? []).reduce((s, x) => s + Number(x.balance), 0);
   const cf = closeFig as null | { revenue: number; costs: number; profit: number; share: number; share_pct: number;
     settlement_to_company: number | null; pending_documents: number; closed: boolean; closed_at: string | null };
   const closed = p.status === "closed";
@@ -278,9 +285,11 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
           <h2>{t.detail.profitability}</h2>
           <div className="kpis compact">
             <div className="kpi"><span className="kpi-label">{t.detail.revenue}</span><span className="kpi-value num">{money(prof.revenue)}</span></div>
-            <div className="kpi"><span className="kpi-label">{t.detail.directCosts}</span><span className="kpi-value num">{money(prof.direct_costs)}</span></div>
+            <div className="kpi"><span className="kpi-label">{t.detail.directCosts}</span><span className="kpi-value num">{money(Number(prof.direct_costs) + advOpenP + cusOpenP)}</span>
+              {advOpenP > 0.004 && <span className="kpi-sub warn-text">{t.exp.ofWhichAdv} {money(advOpenP)}</span>}
+              {cusOpenP > 0.004 && <span className="kpi-sub warn-text">{t.exp.ofWhichCus} {money(cusOpenP)}</span>}</div>
             <div className="kpi"><span className="kpi-label">{t.detail.partnerCost}</span><span className="kpi-value num">{money(prof.partner_share_cost)}</span></div>
-            <div className="kpi"><span className="kpi-label">{t.detail.grossProfit}</span><span className="kpi-value num">{money(prof.gross_profit)}</span></div>
+            <div className="kpi"><span className="kpi-label">{t.detail.grossProfit}</span><span className="kpi-value num">{money(Number(prof.gross_profit) - advOpenP - cusOpenP)}</span></div>
           </div>
         </section>
       )}

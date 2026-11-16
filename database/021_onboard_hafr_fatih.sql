@@ -7,7 +7,7 @@
 -- الفاتح صرف بنفسه من الفلوس اللي معاه، واسترجع ضريبة المصاريف (18,430.57) في إقراره،
 -- فسدّد للهيئة 37,674.90 − 18,430.57 = 19,244.33 بس:
 --   على كباين كرم (HAFR-01): 191,301 بالضريبة ← تكلفة 172,870.43 من غير الضريبة، وسلفة على جزء كرم لجزء الفاتح 172,870.43
---   نسبة مروان 1.5% من PO الفاتح = 37,674.90 (تكلفة على جزء الفاتح) — اتدفع منها 15,000 والباقي 22,674.90 مستحق
+--   دفعة 15,000 من نسبة مروان 1.5% من PO الفاتح (إجمالي النسبة 37,674.90، الباقي 22,674.90) — تكلفة على جزء الفاتح
 -- الباقي عند الفاتح من فلوس جزئه = 288,840.90 − 19,244.33 − 191,301 − 15,000 = 63,295.57
 -- =====================================================================
 -- ── عام: مصروف دفعه الشريك (صاحب العقد) من فلوس المشروع اللي معاه ──
@@ -90,7 +90,7 @@ do $$
 declare
   v_adv_date date := '2026-09-30';     -- ← تاريخ استلام المقدم (عدّله لو مختلف)
   v_co uuid; v_admin uuid; v_h1 uuid; v_h2 uuid; v_partner uuid; v_cust uuid; v_bank uuid; v_bm uuid;
-  v_doc uuid; v_mr uuid; v_cash numeric; v_ip numeric; v_cash1_before numeric; v_cash1_after numeric;
+  v_doc uuid; v_cash numeric; v_ip numeric; v_cash1_before numeric; v_cash1_after numeric;
 begin
   select id into v_co from public.companies where slug = 'trio' or name_ar = 'تريو' order by created_at limit 1;
   select m.user_id into v_admin from public.memberships m
@@ -168,11 +168,10 @@ begin
   perform public.record_partner_transfer(v_co, v_h2, v_adv_date, 19244.33, 'partner_paid_vat', null,
     'صافي إقرار الفاتح: ضريبة المقدم 37,674.90 − ضريبة المصاريف المسترجعة 18,430.57');
 
-  -- ── نسبة مروان 1.5% من PO الفاتح: كاملة مستحقة، والفاتح دفع منها 15,000 ──
-  v_mr := public.post_expense(v_co, jsonb_build_object('project_id', v_h2, 'issue_date', '2026-09-30', 'payment', 'credit',
-    'supplier_name', 'مروان', 'doc_number', 'COMM-HAFR-02', 'net_amount', 37674.90,
-    'details', 'نسبة مروان 1.5% من PO الفاتح (2,511,660 قبل الضريبة) — المدفوع والمتبقي في خانة السداد'));
-  perform public.pay_purchase_by_partner(v_mr, v_h2, 15000.00, '2026-09-30', 'Cost-00024 — مقدم النسبة (دفعها الفاتح)');
+  -- ── نسبة مروان 1.5% من PO الفاتح: بيتسجل اللي اندفع بس (الفاتح دفع 15,000) ──
+  perform public.post_expense_by_partner(v_co, jsonb_build_object('partner_project_id', v_h2, 'project_id', v_h2, 'issue_date', '2026-09-30',
+    'supplier_name', 'مروان', 'doc_number', 'Cost-00024', 'net_amount', 15000.00,
+    'details', 'دفعة من نسبة مروان 1.5% من PO الفاتح — إجمالي النسبة 37,674.90، اتدفع 15,000، الباقي 22,674.90 (دفعها الفاتح)'));
 
   -- ── مراجعة ──
   select coalesce(sum(l.debit - l.credit), 0) into v_cash from public.journal_lines l
