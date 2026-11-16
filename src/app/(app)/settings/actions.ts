@@ -33,7 +33,8 @@ export async function saveCompany(fd: FormData) {
   const a1 = s(fd, "approver_1") || null, a2 = s(fd, "approver_2") || null;
   if (a1 && a1 === a2) back({ message: "المدير الأول والثاني يجب أن يكونا شخصين مختلفين / Approvers must be different people" });
   const { error } = await supabase.from("companies")
-    .update({ custody_approver_1: a1, custody_approver_2: a2, vat_period: s(fd, "vat_period") || "quarterly" })
+    .update({ custody_approver_1: a1, custody_approver_2: a2, vat_period: s(fd, "vat_period") || "quarterly",
+              ...(s(fd, "slug") ? { slug: s(fd, "slug").toLowerCase() } : {}) })
     .eq("id", company.id);
   back(error);
 }
@@ -81,4 +82,20 @@ export async function resetPassword(fd: FormData) {
   if (!m) back({ message: "User is not a member of this company" });
   const { error } = await admin!.auth.admin.updateUserById(userId, { password });
   back(error);
+}
+
+export async function addCompany(fd: FormData) {
+  const { supabase } = await getContext();
+  const { error } = await supabase.rpc("create_company_v2", {
+    p: { name_ar: s(fd, "name_ar"), name_en: s(fd, "name_en"), slug: s(fd, "slug"), vat_number: s(fd, "vat_number"), cr_number: s(fd, "cr_number") },
+  });
+  revalidatePath("/", "layout");
+  redirect(`/settings${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=company"}#companies`);
+}
+
+export async function saveAccess(fd: FormData) {
+  const { supabase } = await getContext();
+  const { error } = await supabase.rpc("set_access", { p_company: s(fd, "company"), p_user: s(fd, "user"), p_role: s(fd, "role") });
+  revalidatePath("/settings");
+  redirect(`/settings${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=access"}#access`);
 }

@@ -23,6 +23,7 @@ export async function setCompany(formData: FormData) {
 }
 
 export async function signOut() {
+  (await cookies()).delete("company");   // next login asks again which company
   const supabase = await supabaseServer();
   await supabase.auth.signOut();
   redirect("/login");

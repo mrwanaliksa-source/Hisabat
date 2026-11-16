@@ -138,6 +138,16 @@ const ar = {
     receivedHint: "مشروعات باسم الشريك تظهر عند اختيار الشريك، ومشروعات شركتنا عند اختيار البنك.",
     kpiHeld: "صافي مستحق لنا لدى الشركاء", save: "حفظ الحركة",
   },
+  co: {
+    choose: "اختار الشركة", chooseHint: "حسابك له صلاحية على أكتر من شركة. اختار هتشتغل على أنهي واحدة؛ وتقدر تبدّل من فوق في أي وقت.",
+    noAccess: "مالكش صلاحية على الشركة دي.", switch: "تبديل الشركة", enter: "دخول",
+    companies: "الشركات", add: "إضافة شركة", nameAr: "اسم الشركة بالعربي", nameEn: "اسم الشركة بالإنجليزي",
+    slug: "الاختصار (لرابط الدخول)", slugHint: "حروف إنجليزي صغيرة وأرقام وشرطة، مثال: trio", vat: "الرقم الضريبي", cr: "السجل التجاري",
+    addHint: "إنت هتبقى أدمن في الشركة الجديدة، وحساباتها (بنك، صندوق، …) بتتعمل جاهزة. بعدها ادخل عليها وضيف موظفينها.",
+    link: "رابط الدخول المباشر", copy: "انسخ", access: "مين يدخل على أنهي شركة",
+    accessHint: "لكل موظف: اختار دوره في كل شركة، أو «—» علشان ما يدخلش عليها. بيظهر هنا موظفين الشركات اللي إنت أدمن فيها.",
+    none: "— لا يدخل", added: "تمت إضافة الشركة", saved: "تم حفظ الصلاحية",
+  },
   adv: {
     title: "دفعات بدون فواتير (تحت الحساب)", new: "دفعة لمورد بدون فاتورة", count: "عدد الدفعات", oldest: "أقدم دفعة", days: "يوم", waiting: "منتظرة فاتورة", closedByInvoice: "اتخصمت من فاتورة", chase: "الموردين دول اتدفعلهم فلوس ولسه مجابوش فواتير — اطلبها منهم.", supplierTotal: "إجمالي بدون فاتورة", none: "لا توجد دفعات مقدمة مفتوحة.",
     supplier: "المورد", notes: "البيان", notesHint: "مثال: دفعة تحت الحساب إيجار معدات",
@@ -348,6 +358,16 @@ const en: Dict = {
     received: "Money received in", atPartner: "Held by partner", partnerProjects: "Projects in the partner's name",
     receivedHint: "Partner-held projects appear when you choose the partner; our projects when you choose a bank.",
     kpiHeld: "Net due to us from partners", save: "Save movement",
+  },
+  co: {
+    choose: "Choose a company", chooseHint: "Your account can access more than one company. Pick one to work in; you can switch at the top any time.",
+    noAccess: "You don't have access to this company.", switch: "Switch company", enter: "Enter",
+    companies: "Companies", add: "Add a company", nameAr: "Company name (Arabic)", nameEn: "Company name (English)",
+    slug: "Short name (for the login link)", slugHint: "lowercase letters, digits and dashes, e.g. trio", vat: "VAT number", cr: "CR number",
+    addHint: "You become admin of the new company and its accounts (bank, cash, …) are created. Then switch to it and add its staff.",
+    link: "Direct login link", copy: "Copy", access: "Who can enter which company",
+    accessHint: "For each person: pick their role in each company, or “—” to block it. Shows the staff of companies where you are admin.",
+    none: "— no access", added: "Company added", saved: "Access saved",
   },
   adv: {
     title: "Payments without invoices (on account)", new: "Pay a supplier without an invoice", count: "Payments", oldest: "Oldest payment", days: "days", waiting: "Awaiting invoice", closedByInvoice: "Matched to an invoice", chase: "These suppliers were paid but have not sent invoices yet — ask them for invoices.", supplierTotal: "Total without invoice", none: "No open supplier advances.",

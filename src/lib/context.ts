@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "./supabase/server";
 
 export type Role = "admin" | "reviewer" | "entry" | "expense" | "custody";
-export type Company = { id: string; name_ar: string; name_en: string | null };
+export type Company = { id: string; name_ar: string; name_en: string | null; slug?: string | null };
 
 /** Signed-in user, their companies, and the active company (cookie or first). */
 export async function getContext() {
@@ -13,7 +13,7 @@ export async function getContext() {
 
   const { data: rows } = await supabase
     .from("memberships")
-    .select("role, company:companies(id, name_ar, name_en)")
+    .select("role, company:companies(id, name_ar, name_en, slug)")
     .eq("user_id", user.id)
     .eq("is_active", true);
 
@@ -22,7 +22,8 @@ export async function getContext() {
     .map((r) => ({ role: r.role as Role, company: r.company as unknown as Company }));
 
   const wanted = (await cookies()).get("company")?.value;
-  const active = memberships.find((m) => m.company.id === wanted) ?? memberships[0] ?? null;
+  const chosen = memberships.find((m) => m.company.id === wanted) ?? null;
+  const active = chosen ?? memberships[0] ?? null;
 
   const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
 
@@ -33,6 +34,8 @@ export async function getContext() {
     memberships,
     company: active?.company ?? null,
     role: active?.role ?? null,
+    /** true when the user picked this company (cookie); false = defaulted to the first */
+    chosen: !!chosen,
   };
 }
 

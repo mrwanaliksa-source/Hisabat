@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getContext } from "@/lib/context";
 import { dict, getLang } from "@/lib/i18n";
 import { Sidebar, type NavItem } from "@/components/Sidebar";
@@ -9,6 +10,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const lang = await getLang();
   const t = dict(lang);
   const ctx = await getContext();
+  // more than one company and none picked yet → choose first
+  if (ctx.memberships.length > 1 && !ctx.chosen) redirect("/choose-company");
 
   const all: (NavItem & { key: string })[] = [
     { key: "home", href: "/", label: t.nav.home, icon: "home", ready: true },
@@ -39,7 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <header className="topbar">
           <div className="topbar-company">
             {ctx.memberships.length > 1 ? (
-              <form action={setCompany} className="company-switch">
+              <form action={setCompany} className="company-switch" title={t.co.switch}>
                 <select name="company" defaultValue={ctx.company?.id}>
                   {ctx.memberships.map((m) => (
                     <option key={m.company.id} value={m.company.id}>

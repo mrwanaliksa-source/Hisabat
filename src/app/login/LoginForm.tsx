@@ -21,7 +21,9 @@ export function LoginForm({ labels }: { labels: Labels }) {
       setBusy(false);
       return;
     }
-    window.location.href = "/";
+    // direct company link: /login?c=trio → that company (if this user may enter it)
+    const c = new URLSearchParams(window.location.search).get("c");
+    window.location.href = c ? `/choose-company?c=${encodeURIComponent(c)}` : "/choose-company";
   }
 
   return (
