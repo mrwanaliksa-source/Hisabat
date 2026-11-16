@@ -16,17 +16,15 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers }: Props)
   const [supplier, setSupplier] = useState("");
   const [vatNo, setVatNo] = useState("");
   const [net, setNet] = useState("");
-  const [vat, setVat] = useState("");
-  const [total, setTotal] = useState("");
-  const [totalTouched, setTotalTouched] = useState(false);
+  const [noVat, setNoVat] = useState(false);
   const [photo, setPhoto] = useState<{ path: string; hash: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
 
-  const sum = r2(toNum(net) + toNum(vat));
-  const totalShown = totalTouched ? total : sum ? String(sum) : "";
-  const mismatch = totalTouched && total !== "" && Math.abs(toNum(total) - sum) > 0.05;
-  const deductible = toNum(vat) > 0 && validVat(vatNo);
+  // VAT is always 15% of the net amount unless the invoice has no VAT
+  const vat = noVat ? 0 : r2(toNum(net) * 0.15);
+  const total = r2(toNum(net) + vat);
+  const deductible = vat > 0 && validVat(vatNo);
 
   function onSupplier(v: string) {
     setSupplier(v);
@@ -100,18 +98,17 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers }: Props)
             <input name="net_amount" inputMode="decimal" dir="ltr" required value={net} onChange={(e) => setNet(e.target.value)} placeholder="0.00" />
           </label>
           <label className="field">
-            <span>{t.exp.vat}
-              <button type="button" className="link-btn" onClick={() => setVat(String(r2(toNum(net) * 0.15)))}>{t.exp.addVat}</button>
-            </span>
-            <input name="vat_amount" inputMode="decimal" dir="ltr" value={vat} onChange={(e) => setVat(e.target.value)} placeholder="0.00" />
+            <span>{t.exp.vat} <small className="muted">{noVat ? "" : t.exp.vatAuto}</small></span>
+            <input inputMode="decimal" dir="ltr" value={fmt(vat)} readOnly className="computed" tabIndex={-1} />
+            <input type="hidden" name="vat_amount" value={vat} />
           </label>
           <label className="field">
             <span>{t.exp.total}</span>
-            <input name="total_amount" inputMode="decimal" dir="ltr" value={totalShown}
-                   onChange={(e) => { setTotalTouched(true); setTotal(e.target.value); }} placeholder="0.00" />
+            <input dir="ltr" value={fmt(total)} readOnly className="computed strong" tabIndex={-1} />
+            <input type="hidden" name="total_amount" value={total} />
           </label>
         </div>
-        {mismatch && <p className="alert warn">{t.exp.totalsMismatch}: <span className="num">{fmt(sum)}</span></p>}
+        <label className="check"><input type="checkbox" checked={noVat} onChange={(e) => setNoVat(e.target.checked)} /> {t.exp.noVat}</label>
         {toNum(vat) > 0 && <p className={`alert ${deductible ? "ok" : "warn"}`}>{deductible ? t.exp.vatDeductible : t.exp.vatNotDeductible}</p>}
       </fieldset>
 
@@ -137,7 +134,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers }: Props)
 
       {state.error && <p className="alert error">{state.error}</p>}
       <div className="actions">
-        <button className="btn primary" data-act="save" disabled={pending || uploading || mismatch}>{pending ? t.exp.saving : t.exp.save}</button>
+        <button className="btn primary" data-act="save" disabled={pending || uploading}>{pending ? t.exp.saving : t.exp.save}</button>
         <Link href="/purchases" className="btn ghost">{t.form.cancel}</Link>
       </div>
     </form>

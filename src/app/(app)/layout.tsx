@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { key: "custody", href: "/custody", label: t.nav.custody, icon: "camera", ready: true },
     { key: "cash", href: "/cash", label: t.nav.cash, icon: "cash", ready: true },
     { key: "review", href: "/review", label: t.nav.review, icon: "review", ready: true },
-    { key: "reports", href: "/reports", label: t.nav.reports, icon: "reports", ready: false },
+    { key: "reports", href: "/reports", label: t.nav.reports, icon: "reports", ready: true },
     { key: "settings", href: "/settings", label: t.nav.settings, icon: "settings", ready: true },
   ];
   const allowed: Record<string, string[]> = {

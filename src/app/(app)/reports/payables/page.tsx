@@ -1,0 +1,59 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getContext, canManage } from "@/lib/context";
+import { dict, getLang, money } from "@/lib/i18n";
+import { dateRange, daysBetween } from "@/lib/reports";
+import { ReportHeader } from "@/components/ReportHeader";
+
+export default async function PayablesReport({ searchParams }: { searchParams: Promise<{ to?: string }> }) {
+  const { to } = dateRange(await searchParams);
+  const lang = await getLang();
+  const t = dict(lang);
+  const { supabase, company, role } = await getContext();
+  if (!company) return null;
+  if (!canManage(role)) redirect("/");
+
+  const [{ data: bal }, { data: docs }] = await Promise.all([
+    supabase.from("v_purchase_balances").select("id,balance").eq("company_id", company.id).gt("balance", 0),
+    supabase.from("purchase_documents").select("id,issue_date,doc_number,details,total_amount,supplier_id,project:projects(code),supplier:parties(name_ar,name_en)")
+      .eq("company_id", company.id).eq("status", "posted").lte("issue_date", to).order("issue_date"),
+  ]);
+  const left = new Map((bal ?? []).map((b) => [b.id, Number(b.balance)]));
+  const rows = (docs ?? []).filter((d) => (left.get(d.id) ?? 0) > 0.004);
+  type N = { name_ar: string; name_en: string | null } | null;
+  const bySupplier = new Map<string, { name: string; total: number }>();
+  for (const d of rows) {
+    const s = d.supplier as unknown as N;
+    const cur = bySupplier.get(d.supplier_id) ?? { name: s ? (lang === "en" && s.name_en) || s.name_ar : "", total: 0 };
+    cur.total += left.get(d.id) ?? 0; bySupplier.set(d.supplier_id, cur);
+  }
+  const total = rows.reduce((s, d) => s + (left.get(d.id) ?? 0), 0);
+
+  return (
+    <div className="stack-lg" id="report">
+      <ReportHeader t={t} title={t.rep.payables.t} desc={t.rep.payables.d} name="supplier-payables" asOf={to} />
+      <section className="card">
+        <h2>{t.exp.supplier}</h2>
+        {bySupplier.size ? (
+          <table><tbody>{[...bySupplier.values()].map((s) => <tr key={s.name}><td>{s.name}</td><td className="n num"><b>{money(s.total)}</b></td></tr>)}</tbody>
+            <tfoot><tr><th>{t.rep.total}</th><th className="n num">{money(total)}</th></tr></tfoot></table>
+        ) : <p className="muted">{t.rep.none}</p>}
+      </section>
+      {rows.length > 0 && (
+        <section className="card">
+          <h2>{t.exp.title}</h2>
+          <div className="table-wrap"><table>
+            <thead><tr><th>{t.exp.date}</th><th>{t.exp.supplier}</th><th>{t.exp.project}</th><th>{t.exp.details}</th>
+              <th className="n">{t.rep.payables.age}</th><th className="n">{t.exp.total}</th><th className="n">{t.exp.balance}</th></tr></thead>
+            <tbody>{rows.map((d) => { const s = d.supplier as unknown as N; return (
+              <tr key={d.id}><td className="num">{d.issue_date}</td><td>{s ? (lang === "en" && s.name_en) || s.name_ar : ""}</td>
+                <td className="num">{(d.project as unknown as { code: string } | null)?.code ?? "—"}</td>
+                <td className="clip"><Link className="link" href={`/purchases/${d.id}`}>{d.details ?? d.doc_number}</Link></td>
+                <td className="n num">{daysBetween(d.issue_date, to)}</td><td className="n num">{money(d.total_amount)}</td>
+                <td className="n num"><b>{money(left.get(d.id))}</b></td></tr>); })}</tbody>
+          </table></div>
+        </section>
+      )}
+    </div>
+  );
+}

@@ -6,7 +6,7 @@ import type { Dict } from "@/lib/i18n";
 
 type Opt = { id: string; name: string };
 type Inv = { key: number; details: string; supplier_name: string; supplier_vat: string; doc_number: string;
-             issue_date: string; net_amount: string; vat_amount: string; project_id: string };
+             issue_date: string; net_amount: string; no_vat: boolean; project_id: string };
 type Props = { t: Dict; custodyId: string; balance: number; defaultProject: string; projects: Opt[]; banks: Opt[];
                suppliers: { name: string; vat: string }[] };
 
@@ -14,19 +14,20 @@ export function SettleForm({ t, custodyId, balance, defaultProject, projects, ba
   const [state, action, pending] = useActionState<SettleState, FormData>(settleCustody, {});
   const today = new Date().toISOString().slice(0, 10);
   const blank = (k: number): Inv => ({ key: k, details: "", supplier_name: "", supplier_vat: "", doc_number: "",
-    issue_date: today, net_amount: "", vat_amount: "", project_id: defaultProject });
+    issue_date: today, net_amount: "", no_vat: false, project_id: defaultProject });
   const [rows, setRows] = useState<Inv[]>([blank(1)]);
   const [ret, setRet] = useState("");
 
-  const set = (k: number, f: keyof Inv, v: string) => setRows(rows.map((r) => (r.key === k ? { ...r, [f]: v } : r)));
+  const set = (k: number, f: keyof Inv, v: string | boolean) => setRows(rows.map((r) => (r.key === k ? { ...r, [f]: v } : r)));
+  const vatOf = (r: Inv) => (r.no_vat ? 0 : r2(toNum(r.net_amount) * 0.15));
   const used = rows.filter((r) => toNum(r.net_amount) > 0);
-  const totalInv = r2(used.reduce((s, r) => s + toNum(r.net_amount) + toNum(r.vat_amount), 0));
+  const totalInv = r2(used.reduce((s, r) => s + toNum(r.net_amount) + vatOf(r), 0));
   const after = r2(balance - totalInv - toNum(ret));
   const missingDetails = used.some((r) => !r.details.trim() || !r.supplier_name.trim());
   const payload = JSON.stringify(used.map((r) => ({
     details: r.details, supplier_name: r.supplier_name, supplier_vat: r.supplier_vat, doc_number: r.doc_number,
-    issue_date: r.issue_date, net_amount: String(toNum(r.net_amount)), vat_amount: String(toNum(r.vat_amount)),
-    total_amount: String(r2(toNum(r.net_amount) + toNum(r.vat_amount))), project_id: r.project_id,
+    issue_date: r.issue_date, net_amount: String(toNum(r.net_amount)), vat_amount: String(vatOf(r)),
+    total_amount: String(r2(toNum(r.net_amount) + vatOf(r))), project_id: r.project_id,
   })));
 
   return (
@@ -56,11 +57,13 @@ export function SettleForm({ t, custodyId, balance, defaultProject, projects, ba
               <input dir="ltr" value={r.doc_number} onChange={(e) => set(r.key, "doc_number", e.target.value)} /></label>
             <label className="field"><span>{t.exp.net}<b className="req"> *</b></span>
               <input dir="ltr" inputMode="decimal" value={r.net_amount} onChange={(e) => set(r.key, "net_amount", e.target.value)} placeholder="0.00" /></label>
-            <label className="field"><span>{t.exp.vat}</span>
-              <input dir="ltr" inputMode="decimal" value={r.vat_amount} onChange={(e) => set(r.key, "vat_amount", e.target.value)} placeholder="0.00" /></label>
+            <label className="field"><span>{t.exp.vat} <small className="muted">{r.no_vat ? "" : "15%"}</small></span>
+              <input dir="ltr" value={fmt(vatOf(r))} readOnly className="computed" tabIndex={-1} /></label>
             <label className="field"><span>{t.exp.date}</span>
               <input type="date" value={r.issue_date} onChange={(e) => set(r.key, "issue_date", e.target.value)} /></label>
           </div>
+          <label className="check"><input type="checkbox" checked={r.no_vat} onChange={(e) => set(r.key, "no_vat", e.target.checked)} /> {t.exp.noVat}
+            <span className="muted small"> · {t.exp.total}: <b className="num">{fmt(r2(toNum(r.net_amount) + vatOf(r)))}</b></span></label>
           <label className="field"><span>{t.exp.project}</span>
             <select value={r.project_id} onChange={(e) => set(r.key, "project_id", e.target.value)}>
               <option value="">{t.exp.general}</option>

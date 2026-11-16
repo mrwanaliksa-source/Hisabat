@@ -20,6 +20,35 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
     supabase.from("v_partner_project_accounts").select("*").eq("company_id", company.id).order("code"),
   ]);
   const pn = new Map((parties ?? []).map((p) => [p.id, (lang === "en" && p.name_en) || p.name_ar]));
+
+  // money out: suppliers (from bank/cash only), custody disbursed, partner transfers & share payments
+  const [{ data: banks }, { data: tb }, { data: sp_ }, { data: cus }, { data: pt }, { data: ps }, { data: supp }] = await Promise.all([
+    supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).order("code"),
+    supabase.from("v_trial_balance").select("account_id,balance").eq("company_id", company.id),
+    supabase.from("supplier_payments").select("id,pay_date,amount,bank_account_id,supplier_id,reference,doc:purchase_documents(id,details,doc_number)").eq("company_id", company.id).order("pay_date", { ascending: false }).limit(200),
+    supabase.from("v_custody").select("id,holder_name,purpose,amount,disbursed_on").eq("company_id", company.id).not("disbursed_on", "is", null),
+    supabase.from("partner_transfers").select("id,transfer_date,amount,bank_account_id,partner_id,reference,project_id").eq("company_id", company.id).eq("direction", "to_partner"),
+    supabase.from("partner_settlements").select("id,settle_date,amount,bank_account_id,partner_id,reference").eq("company_id", company.id),
+    supabase.from("parties").select("id,name_ar,name_en").eq("company_id", company.id).eq("kind", "supplier"),
+  ]);
+  const bankName = new Map((banks ?? []).map((b) => [b.id, `${b.code} · ${(lang === "en" && b.name_en) || b.name_ar}`]));
+  const bal = new Map((tb ?? []).map((r) => [r.account_id, Number(r.balance)]));
+  const sn = new Map((supp ?? []).map((p) => [p.id, (lang === "en" && p.name_en) || p.name_ar]));
+  type Out = { key: string; date: string; type: string; payee: string; detail: string; account: string; amount: number; href?: string };
+  const out: Out[] = [
+    ...(sp_ ?? []).filter((x) => bankName.has(x.bank_account_id)).map((x) => {
+      const d = x.doc as unknown as { id: string; details: string | null; doc_number: string } | null;
+      return { key: "s" + x.id, date: x.pay_date, type: t.cash.ptSupplier, payee: sn.get(x.supplier_id) ?? "", detail: d?.details ?? d?.doc_number ?? "",
+               account: bankName.get(x.bank_account_id) ?? "", amount: Number(x.amount), href: d ? `/purchases/${d.id}` : undefined };
+    }),
+    ...(cus ?? []).map((x) => ({ key: "c" + x.id, date: x.disbursed_on as string, type: t.cash.ptCustody, payee: x.holder_name, detail: x.purpose,
+               account: "", amount: Number(x.amount), href: `/custody/${x.id}` })),
+    ...(pt ?? []).map((x) => ({ key: "t" + x.id, date: x.transfer_date, type: t.cash.ptPartnerOut, payee: pn.get(x.partner_id) ?? "", detail: x.reference ?? "",
+               account: bankName.get(x.bank_account_id ?? "") ?? "", amount: Number(x.amount), href: `/projects/${x.project_id}` })),
+    ...(ps ?? []).map((x) => ({ key: "p" + x.id, date: x.settle_date, type: t.cash.ptPartnerPay, payee: pn.get(x.partner_id) ?? "", detail: x.reference ?? "",
+               account: bankName.get(x.bank_account_id) ?? "", amount: Number(x.amount) })),
+  ].sort((a, b) => (a.date < b.date ? 1 : -1));
+  const anyUnalloc = (receipts ?? []).some((r) => Number(r.unallocated) > 0.004);
   const pc = new Map((projects ?? []).map((p) => [p.id, p.code]));
 
   return (
@@ -29,6 +58,15 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
         <Link href="/cash/receipt/new" className="btn primary"><Icon name="in" /> {t.cash.newReceipt}</Link>
       </div>
       {sp.ok && <p className="alert ok">✓</p>}
+
+      <section className="kpis">
+        {(banks ?? []).map((b) => (
+          <div key={b.id} className="kpi">
+            <span className="kpi-label">{bankName.get(b.id)}</span>
+            <span className="kpi-value num">{money(bal.get(b.id) ?? 0)} <small>{t.sar}</small></span>
+          </div>
+        ))}
+      </section>
 
       <section className="card">
         <h2>{t.cash.receipts}</h2>
@@ -52,6 +90,31 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
             </table>
           </div>
         ) : <p className="muted">{t.cash.noReceipts}</p>}
+        {anyUnalloc && <p className="note">{t.cash.unallocHint}</p>}
+      </section>
+
+      <section className="card">
+        <h2>{t.cash.payments}</h2>
+        {out.length > 0 ? (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>{t.cash.date}</th><th>{t.cash.type}</th><th>{t.cash.payee}</th><th>{t.exp.details}</th>
+                <th>{t.cash.from}</th><th className="n">{t.cash.payAmount}</th></tr></thead>
+              <tbody>
+                {out.map((o) => (
+                  <tr key={o.key}>
+                    <td className="num">{o.date}</td>
+                    <td><span className="chip tiny">{o.type}</span></td>
+                    <td>{o.payee}</td>
+                    <td className="clip">{o.href ? <a className="link" href={o.href}>{o.detail || "—"}</a> : o.detail || "—"}</td>
+                    <td className="muted small">{o.account}</td>
+                    <td className="n num">{money(o.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p className="muted">{t.cash.noPayments}</p>}
       </section>
 
       <section className="card">
@@ -99,7 +162,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
           </div>
         </section>
       )}
-      <p className="note">{t.cash.supplierNote}</p>
+
     </div>
   );
 }

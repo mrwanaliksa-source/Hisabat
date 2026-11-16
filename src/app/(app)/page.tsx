@@ -3,109 +3,163 @@ import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
 import { Icon } from "@/components/Icon";
 
-type TB = { account_id: string; type: string; balance: number; debit: number; credit: number };
+type TB = { account_id: string; balance: number };
 
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ closed?: string }> }) {
+  const sp = await searchParams;
   const lang = await getLang();
   const t = dict(lang);
   const { supabase, company, role } = await getContext();
   if (!company) return null;
   const manager = canManage(role);
 
-  let kpis: { label: string; value: number; icon: string; tone?: string }[] = [];
-  if (manager) {
-    const [{ data: tb }, { data: accts }, { data: partners }, { data: held }] = await Promise.all([
-      supabase.from("v_trial_balance").select("account_id,type,balance,debit,credit").eq("company_id", company.id),
-      supabase.from("accounts").select("id,system_key,is_bank").eq("company_id", company.id),
-      supabase.from("v_partner_balances").select("outstanding").eq("company_id", company.id),
-      supabase.from("v_partner_project_accounts").select("net_due_to_company").eq("company_id", company.id),
-    ]);
-    const byId = new Map((accts ?? []).map((a) => [a.id, a]));
-    const rows = (tb ?? []) as TB[];
-    const sum = (f: (r: TB) => boolean, v: (r: TB) => number) => rows.filter(f).reduce((s, r) => s + Number(v(r)), 0);
-    const key = (r: TB) => byId.get(r.account_id)?.system_key;
-    kpis = [
-      { label: t.kpi.sales, value: sum((r) => r.type === "revenue", (r) => -r.balance), icon: "reports" },
-      { label: t.kpi.costs, value: sum((r) => r.type === "expense", (r) => r.balance), icon: "purchases" },
-      { label: t.kpi.cash, value: sum((r) => !!byId.get(r.account_id)?.is_bank, (r) => r.balance), icon: "cash" },
-      {
-        label: t.kpi.vat,
-        value: sum((r) => key(r) === "vat_output", (r) => -r.balance) - sum((r) => key(r) === "vat_input", (r) => r.balance),
-        icon: "sales",
-      },
-      { label: t.kpi.partner, value: (partners ?? []).reduce((s, p) => s + Number(p.outstanding), 0), icon: "projects" },
-    ];
-    if (held && held.length > 0) {
-      kpis.push({ label: t.pp.kpiHeld, value: held.reduce((s, h) => s + Number(h.net_due_to_company), 0), icon: "in" });
-    }
+  const shortcuts = (
+    <section className="shortcuts">
+      {manager && <Link href="/sales/new" className="btn primary"><Icon name="plus" /> {t.shortcuts.addInvoice}</Link>}
+      {(manager || role === "expense") && <Link href="/purchases/new" className="btn primary"><Icon name="camera" /> {t.shortcuts.captureExpense}</Link>}
+      {manager && <Link href="/cash/receipt/new" className="btn soft"><Icon name="in" /> {t.shortcuts.receipt}</Link>}
+      {manager && <Link href="/purchases?unpaid=1" className="btn soft"><Icon name="out" /> {t.shortcuts.payment}</Link>}
+      {role !== "entry" && <Link href="/custody?new=1" className="btn soft"><Icon name="plus" /> {t.cus.request}</Link>}
+      {role === "entry" && <Link href="/sales/new" className="btn primary"><Icon name="plus" /> {t.shortcuts.addInvoice}</Link>}
+    </section>
+  );
+
+  // limited roles: shortcuts only (and a plain project list for data entry)
+  if (!manager) {
+    const { data: projects } = role === "entry"
+      ? await supabase.from("projects").select("id,code,name_ar,name_en").eq("company_id", company.id).neq("status", "closed").order("code")
+      : { data: null };
+    return (
+      <div className="stack-lg">
+        <h1 className="page-title">{t.dashboard}</h1>
+        {shortcuts}
+        {projects && projects.length > 0 && (
+          <section className="card"><h2>{t.projects}</h2>
+            <ul className="plain-list">{projects.map((p) => <li key={p.id}><Link className="link" href={`/projects/${p.id}`}>
+              <span className="num">{p.code}</span> · {(lang === "en" && p.name_en) || p.name_ar}</Link></li>)}</ul>
+          </section>
+        )}
+      </div>
+    );
   }
 
-  const { data: projects } = await supabase
-    .from("v_project_advance_retention")
-    .select("project_id,code,name_ar,contract_value,works_certified,advance_outstanding,retention_outstanding")
-    .eq("company_id", company.id)
-    .order("code")
-    .limit(8);
+  const [{ data: projects }, { data: prof }, { data: advret }, { data: docs }, { data: held }, { data: tb }, { data: accts },
+         { data: custodies }, { data: payables }, { data: agreements }] = await Promise.all([
+    supabase.from("projects").select("id,code,name_ar,name_en,status,contract_value,contract_holder,customer:parties!projects_customer_id_fkey(name_ar,name_en)")
+      .eq("company_id", company.id).order("code"),
+    supabase.from("v_project_profitability").select("project_id,revenue,direct_costs,partner_share_cost,gross_profit").eq("company_id", company.id),
+    supabase.from("v_project_advance_retention").select("project_id,works_certified,advance_outstanding,retention_outstanding").eq("company_id", company.id),
+    supabase.from("v_sales_document_balances").select("project_id,collectible_total,collected,balance").eq("company_id", company.id).eq("status", "posted"),
+    supabase.from("v_partner_project_accounts").select("project_id,net_due_to_company").eq("company_id", company.id),
+    supabase.from("v_trial_balance").select("account_id,balance").eq("company_id", company.id),
+    supabase.from("accounts").select("id,system_key,is_bank,code,name_ar,name_en").eq("company_id", company.id),
+    supabase.from("v_custody").select("balance").eq("company_id", company.id).eq("status", "open"),
+    supabase.from("v_purchase_balances").select("balance").eq("company_id", company.id).gt("balance", 0),
+    supabase.from("partner_agreements").select("project_id,share_pct,basis").eq("company_id", company.id),
+  ]);
+
+  // company-wide strip: things that only make sense for the whole company
+  const bal = new Map(((tb ?? []) as TB[]).map((r) => [r.account_id, Number(r.balance)]));
+  const byKey = (k: string) => (accts ?? []).filter((a) => a.system_key === k).reduce((s, a) => s + (bal.get(a.id) ?? 0), 0);
+  const banks = (accts ?? []).filter((a) => a.is_bank).sort((a, b) => a.code.localeCompare(b.code));
+  const companyKpis = [
+    ...banks.map((b) => ({ label: (lang === "en" && b.name_en) || b.name_ar, value: bal.get(b.id) ?? 0, icon: "cash" })),
+    { label: t.kpi.vat, value: -byKey("vat_output") - byKey("vat_input"), icon: "sales" },
+    { label: t.dash.payables, value: (payables ?? []).reduce((s, x) => s + Number(x.balance), 0), icon: "out" },
+    { label: t.dash.custodyOpen, value: (custodies ?? []).reduce((s, x) => s + Number(x.balance), 0), icon: "camera" },
+  ];
+
+  const P = new Map((prof ?? []).map((x) => [x.project_id, x]));
+  const A = new Map((advret ?? []).map((x) => [x.project_id, x]));
+  const H = new Map((held ?? []).map((x) => [x.project_id, Number(x.net_due_to_company)]));
+  const G = new Map((agreements ?? []).map((x) => [x.project_id, x]));
+  const D = new Map<string, { billed: number; collected: number; due: number }>();
+  for (const d of docs ?? []) {
+    const cur = D.get(d.project_id) ?? { billed: 0, collected: 0, due: 0 };
+    cur.billed += Number(d.collectible_total); cur.collected += Number(d.collected); cur.due += Number(d.balance);
+    D.set(d.project_id, cur);
+  }
+  const all = projects ?? [];
+  const visible = all.filter((p) => sp.closed || p.status !== "closed");
+  const closedCount = all.filter((p) => p.status === "closed").length;
+  type N = { name_ar: string; name_en: string | null } | null;
 
   return (
     <div className="stack-lg">
       <h1 className="page-title">{t.dashboard}</h1>
+      {shortcuts}
 
-      {manager ? (
-        <section className="kpis">
-          {kpis.map((k) => (
+      <section className="stack">
+        <h2 className="section-title">{t.dash.company}</h2>
+        <div className="kpis compact-row">
+          {companyKpis.map((k) => (
             <div key={k.label} className="kpi">
-              <span className="kpi-icon"><Icon name={k.icon} /></span>
-              <span className="kpi-label">{k.label}</span>
-              <span className="kpi-value num">{money(k.value)} <small>{t.sar}</small></span>
+              <span className="kpi-label"><Icon name={k.icon} size={16} /> {k.label}</span>
+              <span className={`kpi-value num ${k.value < 0 ? "neg" : ""}`}>{money(k.value)} <small>{t.sar}</small></span>
             </div>
           ))}
-        </section>
-      ) : (
-        <p className="muted">{t.kpiHidden}</p>
-      )}
-
-      <section className="shortcuts">
-        {manager && <Link href="/sales/new" className="btn primary"><Icon name="plus" /> {t.shortcuts.addInvoice}</Link>}
-        {(manager || role === "expense") && <Link href="/purchases/new" className="btn primary"><Icon name="camera" /> {t.shortcuts.captureExpense}</Link>}
-        {manager && <Link href="/cash/receipt/new" className="btn soft"><Icon name="in" /> {t.shortcuts.receipt}</Link>}
-        {manager && <Link href="/purchases?unpaid=1" className="btn soft"><Icon name="out" /> {t.shortcuts.payment}</Link>}
-        {role !== "entry" && <Link href="/custody?new=1" className="btn soft"><Icon name="plus" /> {t.cus.request}</Link>}
-        {role === "entry" && <Link href="/sales/new" className="btn primary"><Icon name="plus" /> {t.shortcuts.addInvoice}</Link>}
+        </div>
       </section>
 
-      {(manager || role === "entry") && <section className="card">
+      <section className="stack">
         <div className="card-head">
-          <h2>{t.projects}</h2>
-          <Link href="/projects" className="link">{t.projects} {lang === "ar" ? "←" : "→"}</Link>
-        </div>
-        {projects && projects.length > 0 ? (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t.col.code}</th><th>{t.col.name}</th><th className="n">{t.col.contract}</th>
-                  <th className="n">{t.col.certified}</th><th className="n">{t.col.advOut}</th><th className="n">{t.col.retOut}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.map((p) => (
-                  <tr key={p.project_id}>
-                    <td><Link href={`/projects/${p.project_id}`} className="link num">{p.code}</Link></td>
-                    <td>{p.name_ar}</td>
-                    <td className="n num">{money(p.contract_value)}</td>
-                    <td className="n num">{money(p.works_certified)}</td>
-                    <td className="n num">{money(p.advance_outstanding)}</td>
-                    <td className="n num">{money(p.retention_outstanding)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <h2 className="section-title">{t.dash.projects}</h2>
+          <div className="actions">
+            {closedCount > 0 && (
+              <Link className="link small" href={sp.closed ? "/" : "/?closed=1"}>{sp.closed ? "✓ " : ""}{t.dash.showClosed} ({closedCount})</Link>
+            )}
+            <Link href="/projects/new" className="btn soft sm"><Icon name="plus" size={16} /> {t.newProject}</Link>
           </div>
-        ) : (
-          <p className="muted">{t.noProjects}</p>
-        )}
-      </section>}
+        </div>
+
+        {visible.length === 0 && <div className="card empty"><p className="muted">{t.dash.noProjects}</p></div>}
+        <div className="project-cards">
+          {visible.map((p) => {
+            const f = P.get(p.id), a = A.get(p.id), d = D.get(p.id) ?? { billed: 0, collected: 0, due: 0 }, g = G.get(p.id);
+            const contract = Number(p.contract_value), certified = Number(a?.works_certified ?? 0);
+            const progress = contract > 0 ? Math.min(100, (certified / contract) * 100) : 0;
+            const profit = Number(f?.gross_profit ?? 0);
+            const cust = p.customer as unknown as N;
+            const partnerHeld = p.contract_holder === "partner";
+            const profitBasisOpen = g?.basis === "profit_at_close" && p.status !== "closed";
+            return (
+              <Link key={p.id} href={`/projects/${p.id}`} className={`card project-card ${p.status === "closed" ? "is-closed" : ""}`}>
+                <div className="pc-head">
+                  <div>
+                    <span className="num eyebrow">{p.code}</span>
+                    <b className="pc-name">{(lang === "en" && p.name_en) || p.name_ar}</b>
+                    <span className="muted small">{cust ? (lang === "en" && cust.name_en) || cust.name_ar : ""}</span>
+                  </div>
+                  <div className="chips">
+                    {partnerHeld && <span className="chip tiny">{t.dash.partnerHeld}</span>}
+                    {p.status !== "active" && <span className={`chip tiny st-${p.status}`}>{t.status[p.status as keyof typeof t.status]}</span>}
+                  </div>
+                </div>
+
+                <div className="pc-progress">
+                  <div className="bar"><i style={{ width: `${progress}%` }} /></div>
+                  <span className="small"><b className="num">{progress.toFixed(0)}%</b> · {t.dash.certified} <span className="num">{money(certified)}</span> {t.dash.of} <span className="num">{money(contract)}</span></span>
+                </div>
+
+                <dl className="pc-grid">
+                  <div><dt>{t.dash.collected}</dt><dd className="num">{money(d.collected)}</dd></div>
+                  <div className={d.due > 0.004 ? "warn" : ""}><dt>{t.dash.due}</dt><dd className="num">{money(d.due)}</dd></div>
+                  <div><dt>{t.dash.costs}</dt><dd className="num">{money(f?.direct_costs ?? 0)}</dd></div>
+                  <div><dt>{t.dash.share}{profitBasisOpen ? " *" : ""}</dt><dd className="num">{money(f?.partner_share_cost ?? 0)}</dd></div>
+                  {Number(a?.advance_outstanding ?? 0) > 0 && <div><dt>{t.dash.advLeft}</dt><dd className="num">{money(a?.advance_outstanding)}</dd></div>}
+                  {Number(a?.retention_outstanding ?? 0) > 0 && <div><dt>{t.dash.retLeft}</dt><dd className="num">{money(a?.retention_outstanding)}</dd></div>}
+                  {partnerHeld && <div className="hl"><dt>{t.dash.atPartner}</dt><dd className="num">{money(H.get(p.id) ?? 0)}</dd></div>}
+                </dl>
+
+                <div className={`pc-profit ${profit < 0 ? "neg" : ""}`}>
+                  <span>{t.dash.profit}</span><b className="num">{money(profit)} <small>{t.sar}</small></b>
+                </div>
+                {profitBasisOpen && <p className="muted tiny-note">* {t.pp.profitNote}</p>}
+              </Link>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
