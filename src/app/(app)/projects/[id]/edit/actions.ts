@@ -42,3 +42,12 @@ export async function savePartner(fd: FormData) {
   revalidatePath(`/projects/${id}`); revalidatePath("/projects"); revalidatePath("/"); revalidatePath("/sales/new");
   redirect(`/projects/${id}?ok=edit`);
 }
+
+export async function saveGroup(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = s(fd, "id");
+  const { error } = await supabase.rpc("set_project_group", { p_project: id, p_main: s(fd, "main") || null });
+  if (error) redirect(`/projects/${id}/edit?err=${encodeURIComponent(error.message)}#group`);
+  revalidatePath(`/projects/${id}`); revalidatePath("/");
+  redirect(`/projects/${id}?ok=edit`);
+}

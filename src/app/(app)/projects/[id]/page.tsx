@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money, pct } from "@/lib/i18n";
-import { projectAction, adjustOpening } from "./actions";
+import { projectAction, adjustOpening, settleParts } from "./actions";
 
 type Params = Promise<{ id: string }>;
 
@@ -37,6 +37,17 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
     manager && holderPartner ? supabase.from("v_partner_project_accounts").select("*").eq("project_id", id).maybeSingle() : Promise.resolve({ data: null }),
     manager && profitBasis ? supabase.rpc("project_close_figures", { p_project: id }) : Promise.resolve({ data: null }),
   ]);
+  const groupKey = p.group_id ?? null;
+  const [{ data: gp }, { data: ipRows }, { data: cashRows }, { data: bankList }] = groupKey ? await Promise.all([
+    supabase.from("projects").select("id,code,name_ar").eq("group_id", groupKey).order("code"),
+    supabase.from("v_inter_part").select("project_id,balance").eq("company_id", company.id),
+    supabase.from("v_project_cash").select("project_id,bank_net").eq("company_id", company.id),
+    supabase.from("accounts").select("id,code,name_ar,project_id").eq("company_id", company.id).eq("is_bank", true).order("code"),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
+  const groupParts = (gp ?? []) as { id: string; code: string; name_ar: string }[];
+  const bankOf = (pid?: string) => ((bankList ?? []) as { id: string; project_id: string | null }[]).find((b) => b.project_id === pid)?.id;
+  const ipMap = new Map((ipRows ?? []).map((r: { project_id: string; balance: number }) => [r.project_id, Number(r.balance)]));
+  const cashMap = new Map((cashRows ?? []).map((r: { project_id: string; bank_net: number }) => [r.project_id, Number(r.bank_net)]));
   const cf = closeFig as null | { revenue: number; costs: number; profit: number; share: number; share_pct: number;
     settlement_to_company: number | null; pending_documents: number; closed: boolean; closed_at: string | null };
   const closed = p.status === "closed";
@@ -152,6 +163,46 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
             <div className="kpi"><span className="kpi-label">{t.pp.partnerVat}</span><span className="kpi-value num">{money(acct.partner_vat_due)}</span></div>
             <div className="kpi hl"><span className="kpi-label">{t.pp.netDue}</span><span className="kpi-value num">{money(acct.net_due_to_company)}</span></div>
           </div>
+        </section>
+      )}
+
+      {groupParts.length > 1 && (
+        <section className="card" id="parts">
+          <h2>{t.parts.title}</h2>
+          <table>
+            <thead><tr><th>{t.parts.part}</th><th className="n">{t.parts.cash}</th><th className="n">{t.parts.loan}</th></tr></thead>
+            <tbody>
+              {groupParts.map((g) => {
+                const b = Number(ipMap.get(g.id) ?? 0);
+                return (
+                  <tr key={g.id} className={g.id === id ? "hl-row" : ""}>
+                    <td><Link className="link" href={`/projects/${g.id}`}>{g.code}</Link> · {g.name_ar}</td>
+                    <td className="n num">{money(cashMap.get(g.id) ?? 0)}</td>
+                    <td className="n num">{Math.abs(b) < 0.005 ? "—" : <b className={b < 0 ? "warn-text" : ""}>{b > 0 ? t.parts.owed : t.parts.owes} {money(Math.abs(b))}</b>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {manager && groupParts.some((g) => Number(ipMap.get(g.id) ?? 0) < -0.004) && (
+            <form action={settleParts} className="stack mt">
+              <h3>{t.parts.settle}</h3>
+              <input type="hidden" name="id" value={id} />
+              <div className="grid-3">
+                <label className="field"><span>{t.parts.from}</span>
+                  <select name="debtor">{groupParts.filter((g) => Number(ipMap.get(g.id) ?? 0) < -0.004).map((g) => <option key={g.id} value={g.id}>{g.code}</option>)}</select></label>
+                <label className="field"><span>{t.parts.to}</span>
+                  <select name="creditor">{groupParts.filter((g) => Number(ipMap.get(g.id) ?? 0) > 0.004).map((g) => <option key={g.id} value={g.id}>{g.code}</option>)}</select></label>
+                <label className="field"><span>{t.cash.payAmount}</span><input name="amount" inputMode="decimal" dir="ltr" required /></label>
+                <label className="field"><span>{t.parts.fromBank}</span>
+                  <select name="from_account" defaultValue={bankOf(groupParts.find((g) => Number(ipMap.get(g.id) ?? 0) < -0.004)?.id)}>{(bankList ?? []).map((b) => <option key={b.id} value={b.id}>{b.code} · {b.name_ar}</option>)}</select></label>
+                <label className="field"><span>{t.parts.toBank}</span>
+                  <select name="to_account" defaultValue={bankOf(groupParts.find((g) => Number(ipMap.get(g.id) ?? 0) > 0.004)?.id)}>{(bankList ?? []).map((b) => <option key={b.id} value={b.id}>{b.code} · {b.name_ar}</option>)}</select></label>
+                <label className="field"><span>{t.cash.date}</span><input type="date" name="date" defaultValue={new Date().toISOString().slice(0, 10)} /></label>
+              </div>
+              <button className="btn soft self-start" data-act="settle-parts">{t.parts.settleBtn}</button>
+            </form>
+          )}
         </section>
       )}
 

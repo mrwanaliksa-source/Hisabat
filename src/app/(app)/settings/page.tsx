@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getContext } from "@/lib/context";
 import { dict, getLang } from "@/lib/i18n";
-import { addMember, updateMember, saveCompany, createUser, resetPassword, addCompany, saveAccess } from "./actions";
+import { addMember, updateMember, saveCompany, createUser, resetPassword, addCompany, saveAccess, addBank, linkBank } from "./actions";
 import { headers } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { displayLogin } from "@/lib/username";
@@ -19,6 +19,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const [{ data: members }, { data: co }] = await Promise.all([
     supabase.from("memberships").select("user_id,role,is_active").eq("company_id", company.id),
     supabase.from("companies").select("custody_approver_1,custody_approver_2,vat_period,slug").eq("id", company.id).maybeSingle(),
+  ]);
+  const [{ data: bankAccts }, { data: projList }] = await Promise.all([
+    supabase.from("accounts").select("id,code,name_ar,project_id").eq("company_id", company.id).eq("is_bank", true).order("code"),
+    supabase.from("projects").select("id,code,name_ar").eq("company_id", company.id).neq("status", "closed").order("code"),
   ]);
   // companies where I am admin → access matrix
   const adminCos = memberships.filter((m) => m.role === "admin").map((m) => m.company);
@@ -143,7 +147,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <option value="">—</option>{active.map((m) => <option key={m.user_id} value={m.user_id}>{name(m.user_id)}</option>)}
             </select></label>
           <label className="field"><span>{t.co.slug}</span>
-            <input name="slug" dir="ltr" defaultValue={co?.slug ?? ""} pattern="[a-z0-9][a-z0-9\-]{1,29}" />
+            <input name="slug" dir="ltr" defaultValue={co?.slug ?? ""} />
             <small className="muted num">{origin}/login?c={co?.slug ?? ""}</small></label>
           <label className="field"><span>{t.set.vatPeriod}</span>
             <select name="vat_period" defaultValue={co?.vat_period ?? "quarterly"}>
@@ -152,6 +156,37 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </div>
         <button className="btn primary self-start" data-act="save-company">{t.set.save}</button>
       </form>
+
+      <section className="card stack" id="banks">
+        <h2>{t.parts.banks}</h2>
+        <p className="muted small">{t.parts.bankHint}</p>
+        <table>
+          <tbody>
+            {(bankAccts ?? []).map((b) => (
+              <tr key={b.id}>
+                <td className="num muted">{b.code}</td><td><b>{b.name_ar}</b></td>
+                <td>
+                  <form action={linkBank} className="inline-form">
+                    <input type="hidden" name="account" value={b.id} />
+                    <select name="project" defaultValue={b.project_id ?? ""}>
+                      <option value="">{t.parts.general}</option>
+                      {(projList ?? []).map((pj) => <option key={pj.id} value={pj.id}>{t.parts.holds} {pj.code} · {pj.name_ar}</option>)}
+                    </select>
+                    <button className="btn ghost sm" data-act="link-bank">{t.set.save}</button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <form action={addBank} className="grid-3 mt">
+          <label className="field"><span>{t.parts.bankName}<b className="req"> *</b></span><input name="name" required /></label>
+          <label className="field"><span>{t.parts.holds}</span>
+            <select name="project" defaultValue=""><option value="">{t.parts.general}</option>
+              {(projList ?? []).map((pj) => <option key={pj.id} value={pj.id}>{pj.code} · {pj.name_ar}</option>)}</select></label>
+          <div className="field"><span>&nbsp;</span><button className="btn primary" data-act="add-bank">{t.parts.addBank}</button></div>
+        </form>
+      </section>
 
       {adminCos.length > 0 && (
         <section className="card" id="access">
@@ -211,7 +246,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             <label className="field"><span>{t.co.nameAr}<b className="req"> *</b></span><input name="name_ar" required /></label>
             <label className="field"><span>{t.co.nameEn}</span><input name="name_en" dir="ltr" /></label>
             <label className="field"><span>{t.co.slug}<b className="req"> *</b></span>
-              <input name="slug" required dir="ltr" autoCapitalize="none" pattern="[a-z0-9][a-z0-9\-]{1,29}" />
+              <input name="slug" required dir="ltr" autoCapitalize="none" />
               <small className="muted">{t.co.slugHint}</small></label>
             <label className="field"><span>{t.co.vat}</span><input name="vat_number" dir="ltr" inputMode="numeric" /></label>
           </div>

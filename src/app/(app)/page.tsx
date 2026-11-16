@@ -44,8 +44,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   }
 
   const [{ data: projects }, { data: prof }, { data: advret }, { data: docs }, { data: held }, { data: tb }, { data: accts },
-         { data: custodies }, { data: payables }, { data: agreements }, { data: pcash }, { data: advs }, { data: pcust }] = await Promise.all([
-    supabase.from("projects").select("id,code,name_ar,name_en,status,contract_value,contract_holder,customer:parties!projects_customer_id_fkey(name_ar,name_en)")
+         { data: custodies }, { data: payables }, { data: agreements }, { data: pcash }, { data: advs }, { data: pcust }, { data: iparts }] = await Promise.all([
+    supabase.from("projects").select("id,code,name_ar,name_en,status,contract_value,contract_holder,group_id,customer:parties!projects_customer_id_fkey(name_ar,name_en)")
       .eq("company_id", company.id).order("code"),
     supabase.from("v_project_profitability").select("project_id,revenue,direct_costs,partner_share_cost,gross_profit").eq("company_id", company.id),
     supabase.from("v_project_advance_retention").select("project_id,works_certified,advance_outstanding,retention_outstanding").eq("company_id", company.id),
@@ -59,7 +59,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     supabase.from("v_project_cash").select("project_id,bank_net").eq("company_id", company.id),
     supabase.from("v_supplier_advances").select("project_id,balance").eq("company_id", company.id).gt("balance", 0),
     supabase.from("v_custody").select("project_id,balance").eq("company_id", company.id).eq("status", "open"),
+    supabase.from("v_inter_part").select("project_id,balance").eq("company_id", company.id),
   ]);
+  const IP = new Map((iparts ?? []).map((x) => [x.project_id, Number(x.balance)]));
   const BANK = new Map((pcash ?? []).map((x) => [x.project_id, Number(x.bank_net)]));
   const sumBy = (rows: { project_id: string | null; balance: number }[] | null) => {
     const m = new Map<string, number>();
@@ -97,7 +99,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     D.set(d.project_id, cur);
   }
   const all = projects ?? [];
-  const visible = all.filter((p) => sp.closed || p.status !== "closed");
+  // parts of the same project sit next to each other
+  const gk = (p: { id: string; group_id?: string | null }) => p.group_id ?? p.id;
+  const firstCode = new Map<string, string>();
+  for (const p of all) { const k = gk(p); if (!firstCode.has(k) || p.code < firstCode.get(k)!) firstCode.set(k, p.code); }
+  const visible = all.filter((p) => sp.closed || p.status !== "closed")
+    .sort((a, b) => (firstCode.get(gk(a))! + a.code).localeCompare(firstCode.get(gk(b))! + b.code));
+  const mainName = new Map(all.map((p) => [p.id, (lang === "en" && p.name_en) || p.name_ar]));
   const closedCount = all.filter((p) => p.status === "closed").length;
   type N = { name_ar: string; name_en: string | null } | null;
 
@@ -152,6 +160,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                     <span className="muted small">{cust ? (lang === "en" && cust.name_en) || cust.name_ar : ""}</span>
                   </div>
                   <div className="chips">
+                    {p.group_id && p.group_id !== p.id && <span className="chip tiny">{t.parts.partOf}: {mainName.get(p.group_id)}</span>}
+                    {p.group_id === p.id && <span className="chip tiny">{t.parts.main}</span>}
                     {partnerHeld && <span className="chip tiny">{t.dash.partnerHeld}</span>}
                     {p.status !== "active" && <span className={`chip tiny st-${p.status}`}>{t.status[p.status as keyof typeof t.status]}</span>}
                   </div>
@@ -169,6 +179,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                   <div><dt>{t.dash.share}{profitBasisOpen ? " *" : ""}</dt><dd className="num">{money(f?.partner_share_cost ?? 0)}</dd></div>
                   {Number(a?.advance_outstanding ?? 0) > 0 && <div><dt>{t.dash.advLeft}</dt><dd className="num">{money(a?.advance_outstanding)}</dd></div>}
                   {Number(a?.retention_outstanding ?? 0) > 0 && <div><dt>{t.dash.retLeft}</dt><dd className="num">{money(a?.retention_outstanding)}</dd></div>}
+                  {Math.abs(IP.get(p.id) ?? 0) > 0.004 && <div className={(IP.get(p.id) ?? 0) < 0 ? "warn" : "hl"}><dt>{t.parts.loan}</dt>
+                    <dd className="num">{(IP.get(p.id) ?? 0) > 0 ? t.parts.owed : t.parts.owes} {money(Math.abs(IP.get(p.id) ?? 0))}</dd></div>}
                   {advOpen > 0.004 && <div className="warn"><dt>{t.adv.waiting}</dt><dd className="num">{money(advOpen)}</dd></div>}
                   {cusOpen > 0.004 && <div><dt>{t.dash.custodyOpen}</dt><dd className="num">{money(cusOpen)}</dd></div>}
                   {partnerHeld && <div className="hl"><dt>{t.dash.atPartner}</dt><dd className="num">{money(H.get(p.id) ?? 0)}</dd></div>}

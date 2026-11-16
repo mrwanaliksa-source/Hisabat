@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
-import { paySupplier, applyAdvance } from "./actions";
+import { paySupplier, applyAdvance, payByPartner } from "./actions";
 
 type Params = Promise<{ id: string }>;
 
@@ -34,6 +34,10 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
     canApply ? supabase.from("v_supplier_advances").select("id,pay_date,notes,balance").eq("supplier_id", d.supplier_id).gt("balance", 0).order("pay_date")
              : Promise.resolve({ data: null }),
   ]);
+  const { data: heldProjects } = manager
+    ? await supabase.from("projects").select("id,code,holder:parties!projects_holder_partner_id_fkey(name_ar)")
+        .eq("company_id", company.id).eq("contract_holder", "partner").neq("status", "closed").order("code")
+    : { data: null };
   const left = Number(bal?.balance ?? 0);
   const photoUrl = (photo as { data: { signedUrl: string } | null })?.data?.signedUrl;
 
@@ -88,6 +92,24 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
                   <input name="amount" inputMode="decimal" dir="ltr" defaultValue={Math.min(left, Number(advs[0].balance))} /></label>
               </div>
               <button className="btn soft" data-act="apply-advance">{t.adv.apply}</button>
+            </form>
+          )}
+          {manager && left > 0.004 && heldProjects && heldProjects.length > 0 && (
+            <form action={payByPartner} className="stack apply-adv">
+              <h3>{t.exp.byPartner}</h3>
+              <input type="hidden" name="id" value={id} />
+              <div className="grid-2">
+                <label className="field"><span>{t.exp.byPartnerFrom}</span>
+                  <select name="project" defaultValue={heldProjects.find((h) => h.id === d.project_id)?.id}>
+                    {heldProjects.map((h) => <option key={h.id} value={h.id}>{(h.holder as unknown as { name_ar: string } | null)?.name_ar} — {t.parts.moneyOf} {h.code}</option>)}
+                  </select></label>
+                <label className="field"><span>{t.cash.payAmount}</span><input name="amount" inputMode="decimal" dir="ltr" defaultValue={left} /></label>
+                <label className="field"><span>{t.cash.date}</span><input type="date" name="date" defaultValue={new Date().toISOString().slice(0, 10)} /></label>
+              </div>
+              {Number(d.vat_amount) - Number(d.eligible_vat ?? 0) > 0 && (
+                <label className="check"><input type="checkbox" name="reclaim" value="1" defaultChecked /> {t.exp.partnerReclaims}</label>
+              )}
+              <button className="btn soft" data-act="pay-partner">{t.exp.byPartner}</button>
             </form>
           )}
           {manager && left > 0.004 && (

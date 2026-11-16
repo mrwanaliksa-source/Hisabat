@@ -138,6 +138,15 @@ const ar = {
     receivedHint: "مشروعات باسم الشريك تظهر عند اختيار الشريك، ومشروعات شركتنا عند اختيار البنك.",
     kpiHeld: "صافي مستحق لنا لدى الشركاء", save: "حفظ الحركة",
   },
+  parts: {
+    title: "أجزاء المشروع", hint: "لو المشروع ده جزء من مشروع أكبر (زي جزء الفاتح في حفر الباطن) اختار المشروع الرئيسي. كل جزء بشريكه ونسبته وأرباحه، واللي يتصرف من فلوس جزء على شغل جزء تاني بيتسجل سلفة بينهم.",
+    partOf: "جزء من مشروع", main: "مشروع رئيسي (له أجزاء)", standalone: "مشروع مستقل", part: "الجزء", cash: "النقدية (مطابقة للبنك)", loan: "بين الأجزاء",
+    owed: "ليه عند التاني", owes: "عليه للتاني", settle: "تسوية سلفة بين الجزءين", from: "الجزء المديون", to: "الجزء الدائن",
+    fromBank: "من بنك", toBank: "إلى بنك", settleBtn: "تسجيل التسوية",
+    banks: "حسابات البنوك والصناديق", bankHint: "لو بنك فيه فلوس جزء معيّن من مشروع (زي بنك الفاتح)، اربطه بالجزء. أي صرف منه على شغل جزء تاني بيتسجل سلفة أوتوماتيك.",
+    holds: "فلوس", general: "عام (الشركة)", addBank: "إضافة بنك / صندوق", bankName: "اسم الحساب",
+    loanNote: "هيتسجل سلفة: {works} مديون لـ {funding} بالمبلغ ده.", moneyOf: "فلوس",
+  },
   co: {
     choose: "اختار الشركة", chooseHint: "حسابك له صلاحية على أكتر من شركة. اختار هتشتغل على أنهي واحدة؛ وتقدر تبدّل من فوق في أي وقت.",
     noAccess: "مالكش صلاحية على الشركة دي.", switch: "تبديل الشركة", enter: "دخول",
@@ -167,7 +176,7 @@ const ar = {
     totalsMismatch: "قبل الضريبة + الضريبة لا يساوي الإجمالي", save: "حفظ المصروف", saving: "جارٍ الحفظ…",
     by: "أدخله", paid: "مدفوع", balance: "متبقي للمورد", payNow: "سداد للمورد", custodyRow: "عهدة على",
     openCustodies: "عهد مفتوحة", posted: "تم تسجيل المصروف", addVat: "احسب 15%", uploading: "جارٍ رفع الصورة…",
-    viewPhoto: "عرض الصورة", noVat: "بدون ضريبة", vatAuto: "تحسب تلقائيًا 15%",
+    viewPhoto: "عرض الصورة", byPartner: "دفعها الشريك", byPartnerFrom: "من فلوس المشروع اللي مع", partnerReclaims: "الشريك هيسترجع ضريبة الفاتورة دي في إقراره (الضريبة مش هتتحسب تكلفة)", noVat: "بدون ضريبة", vatAuto: "تحسب تلقائيًا 15%",
   },
   cus: {
     title: "العهد", request: "طلب عهدة", none: "لا توجد عهد.", amount: "المبلغ المطلوب", purpose: "الغرض من العهدة",
@@ -359,6 +368,15 @@ const en: Dict = {
     receivedHint: "Partner-held projects appear when you choose the partner; our projects when you choose a bank.",
     kpiHeld: "Net due to us from partners", save: "Save movement",
   },
+  parts: {
+    title: "Project parts", hint: "If this project is part of a bigger one (like Al-Fatih's part of Hafr Al-Batin), choose the main project. Each part keeps its partner, share and profit; spending one part's money on another part's works is recorded as a loan between them.",
+    partOf: "Part of project", main: "Main project (has parts)", standalone: "Standalone project", part: "Part", cash: "Cash (matches the bank)", loan: "Between parts",
+    owed: "owed by the other part", owes: "owes the other part", settle: "Settle a loan between parts", from: "Part that owes", to: "Part that is owed",
+    fromBank: "From account", toBank: "To account", settleBtn: "Record settlement",
+    banks: "Bank & cash accounts", bankHint: "If an account holds one project part's money (e.g. Al-Fatih's bank), link it. Paying another part's works from it records a loan automatically.",
+    holds: "money of", general: "General (company)", addBank: "Add bank / cash account", bankName: "Account name",
+    loanNote: "A loan will be recorded: {works} owes {funding} this amount.", moneyOf: "money of",
+  },
   co: {
     choose: "Choose a company", chooseHint: "Your account can access more than one company. Pick one to work in; you can switch at the top any time.",
     noAccess: "You don't have access to this company.", switch: "Switch company", enter: "Enter",
@@ -388,7 +406,7 @@ const en: Dict = {
     totalsMismatch: "Amount + VAT does not equal the total", save: "Save expense", saving: "Saving…",
     by: "Entered by", paid: "Paid", balance: "Owed to supplier", payNow: "Pay supplier", custodyRow: "Custody held by",
     openCustodies: "Open custodies", posted: "Expense recorded", addVat: "Add 15%", uploading: "Uploading photo…",
-    viewPhoto: "View photo", noVat: "No VAT", vatAuto: "Calculated automatically at 15%",
+    viewPhoto: "View photo", byPartner: "Paid by the partner", byPartnerFrom: "From the project money held by", partnerReclaims: "The partner reclaims this invoice's VAT in its return (VAT is not a cost)", noVat: "No VAT", vatAuto: "Calculated automatically at 15%",
   },
   cus: {
     title: "Custody", request: "Request custody", none: "No custody yet.", amount: "Amount requested", purpose: "Purpose",

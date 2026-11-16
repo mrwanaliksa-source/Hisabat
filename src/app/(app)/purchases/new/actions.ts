@@ -26,7 +26,9 @@ export async function createExpense(_prev: FormState, fd: FormData): Promise<For
     attachment_path: str(fd.get("attachment_path")),
     file_hash: str(fd.get("file_hash")),
   };
-  const { data, error } = pay.startsWith("advance:")
+  const { data, error } = pay.startsWith("partner:")
+    ? await supabase.rpc("post_expense_by_partner", { p_company: company.id, p: { ...payload, partner_project_id: pay.slice(8), partner_reclaims_vat: fd.get("partner_reclaims_vat") === "1" } })
+    : pay.startsWith("advance:")
     ? await supabase.rpc("post_expense_from_advance", { p_company: company.id, p: { ...payload, advance_id: pay.slice(8) } })
     : await supabase.rpc("post_expense", { p_company: company.id, p: payload });
   if (error) return { error: error.message };

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang } from "@/lib/i18n";
-import { saveProject, savePartner } from "./actions";
+import { saveProject, savePartner, saveGroup } from "./actions";
 import { PartnerTerms } from "./PartnerTerms";
 
 const pct = (v: unknown) => (v == null ? "" : String(Math.round(Number(v) * 10000) / 100));
@@ -20,6 +20,7 @@ export default async function EditProject({ params, searchParams }: { params: Pr
   const { count } = await supabase.from("sales_documents").select("id", { count: "exact", head: true })
     .eq("project_id", id).eq("status", "posted").in("doc_type", ["progress_claim", "retention_release"]);
   const locked = (count ?? 0) > 0;
+  const { data: others } = await supabase.from("projects").select("id,code,name_ar,group_id").eq("company_id", company.id).neq("id", id).order("code");
   const [{ data: agreements }, { count: postedAny }, { data: partners }] = await Promise.all([
     supabase.from("partner_agreements").select("id,partner_id,share_pct,basis,effective_from,effective_to,partner:parties(name_ar,name_en,vat_period)")
       .eq("project_id", id).order("effective_from"),
@@ -91,6 +92,18 @@ export default async function EditProject({ params, searchParams }: { params: Pr
                                vatPeriod: cp?.vat_period ?? "quarterly" } : null}
           history={(agreements ?? []).map((a) => ({ pct: Number(a.share_pct), from: a.effective_from, to: a.effective_to }))}
           partners={(partners ?? []).map((x) => ({ id: x.id, name: x.name_ar }))} />
+      </form>
+
+      <form action={saveGroup} className="card stack" id="group">
+        <input type="hidden" name="id" value={id} />
+        <h2>{t.parts.title}</h2>
+        <p className="muted small">{t.parts.hint}</p>
+        <label className="field"><span>{t.parts.partOf}</span>
+          <select name="main" defaultValue={p.group_id && p.group_id !== id ? p.group_id : ""}>
+            <option value="">{t.parts.standalone}</option>
+            {(others ?? []).filter((o) => !o.group_id || o.group_id === o.id).map((o) => <option key={o.id} value={o.id}>{o.code} · {o.name_ar}</option>)}
+          </select></label>
+        <button className="btn soft self-start" data-act="save-group">{t.set.save}</button>
       </form>
     </div>
   );

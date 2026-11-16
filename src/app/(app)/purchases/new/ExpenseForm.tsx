@@ -6,7 +6,7 @@ import { fmt, r2, toNum } from "@/lib/calc";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Dict } from "@/lib/i18n";
 
-type Opt = { id: string; name: string };
+type Opt = { id: string; name: string; code?: string; group?: string; projectId?: string | null; partner?: string };
 type Adv = { id: string; supplier: string; balance: number; projectId: string | null };
 type Props = { t: Dict; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[] };
 
@@ -15,6 +15,7 @@ const validVat = (v: string) => /^3\d{13}3$/.test(v.replace(/\D/g, ""));
 export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(createExpense, {});
   const [supplier, setSupplier] = useState("");
+  const [projectId, setProjectId] = useState(projects.length === 1 ? projects[0].id : "");
   const [vatNo, setVatNo] = useState("");
   const [net, setNet] = useState("");
   const [noVat, setNoVat] = useState(false);
@@ -69,7 +70,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
         <div className="grid-2">
           <label className="field">
             <span>{t.exp.project}</span>
-            <select name="project_id" defaultValue={projects.length === 1 ? projects[0].id : ""}>
+            <select name="project_id" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
               <option value="">{t.exp.general}</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
@@ -121,8 +122,15 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
         <label className="field">
           <span>{t.exp.payAccount}</span>
           <select name="pay" value={pay} onChange={(e) => setPay(e.target.value)}>
-            {banks.map((b) => <option key={b.id} value={`account:${b.id}`}>{b.name}</option>)}
+            {banks.map((b) => <option key={b.id} value={`account:${b.id}`}>{b.name}{b.projectId ? ` — ${t.parts.moneyOf} ${projects.find((p) => p.id === b.projectId)?.code ?? ""}` : ""}</option>)}
             <option value="credit">{t.exp.payCredit}</option>
+            {projects.some((p) => p.partner !== undefined) && (
+              <optgroup label={t.exp.byPartner}>
+                {projects.filter((p) => p.partner !== undefined).map((p) => (
+                  <option key={p.id} value={`partner:${p.id}`}>{t.exp.byPartner}: {p.partner} — {t.parts.moneyOf} {p.code}</option>
+                ))}
+              </optgroup>
+            )}
             {advances.length > 0 && (
               <optgroup label={t.adv.payFrom}>
                 {advances.map((a) => <option key={a.id} value={`advance:${a.id}`}>{a.supplier} — {t.adv.left} {fmt(a.balance)}</option>)}
@@ -130,6 +138,17 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
             )}
           </select>
         </label>
+        {pay.startsWith("partner:") && vat > 0 && (
+          <label className="check"><input type="checkbox" name="partner_reclaims_vat" value="1" defaultChecked /> {t.exp.partnerReclaims}</label>
+        )}
+        {(() => {
+          // money of one part spent on another part's works → loan note
+          const bank = pay.startsWith("account:") ? banks.find((b) => b.id === pay.slice(8)) : null;
+          const fundId = pay.startsWith("partner:") ? pay.slice(8) : bank?.projectId;
+          const works = projects.find((p) => p.id === projectId), funding = projects.find((p) => p.id === fundId);
+          if (!works || !funding || works.id === funding.id || works.group !== funding.group) return null;
+          return <p className="alert warn small">{t.parts.loanNote.replace("{works}", works.code ?? "").replace("{funding}", funding.code ?? "")}</p>;
+        })()}
         {adv && (
           <p className="alert ok small">
             {t.adv.payFrom}: <b className="num">{fmt(Math.min(total, adv.balance))}</b>
