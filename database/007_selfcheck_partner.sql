@@ -8,7 +8,7 @@ declare
   co uuid; cust uuid; supp uuid; prj uuid; bank uuid; partner uuid;
   adv uuid; c1 uuid; c2 uuid; pur uuid; r uuid; f jsonb; v numeric; d record;
 begin
-  perform set_config('request.jwt.claims', '{"sub":"28b71ba8-eb6b-4e18-a330-6f883eeca626","role":"authenticated"}', true);
+  perform set_config('request.jwt.claims', '{"sub":"PUT-YOUR-USER-ID","role":"authenticated"}', true);
   execute 'set local role authenticated';
   co := public.create_company('شركة فحص الشريك', 'Partner check Co');
   select id into bank from public.accounts where company_id = co and system_key = 'bank_main';

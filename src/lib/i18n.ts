@@ -9,8 +9,8 @@ export async function getLang(): Promise<Lang> {
 
 const ar = {
   appName: "حسابات",
-  login: "تسجيل الدخول", email: "البريد الإلكتروني", password: "كلمة المرور",
-  loginBtn: "دخول", loggingIn: "جارٍ الدخول…", loginError: "البريد أو كلمة المرور غير صحيحة",
+  login: "تسجيل الدخول", email: "اسم المستخدم أو البريد", password: "كلمة المرور",
+  loginBtn: "دخول", loggingIn: "جارٍ الدخول…", loginError: "اسم المستخدم أو كلمة المرور غير صحيحة",
   logout: "خروج",
   noCompany: "حسابك غير مربوط بأي شركة بعد. اطلب من الأدمن إضافتك.",
   nav: {
@@ -139,11 +139,16 @@ const ar = {
     st: { pending_1: "بانتظار المدير الأول", pending_2: "بانتظار المدير الثاني", open: "مصروفة — مفتوحة", rejected: "مرفوضة", settled: "مصفاة" },
   },
   set: {
-    title: "الإعدادات", members: "المستخدمون", addMember: "إضافة مستخدم", email: "البريد الإلكتروني", role: "الدور",
+    title: "الإعدادات", members: "المستخدمون", addMember: "إضافة مستخدم", email: "اسم المستخدم أو البريد", role: "الدور",
     addHint: "أنشئ المستخدم أولًا من Supabase ← Authentication ← Users، ثم أضفه هنا ببريده.",
     add: "إضافة", approvers: "مديرا اعتماد العهد", approversHint: "الموافقة الأولى للمدير الأول ثم النهائية للمدير الثاني.",
     company: "الشركة", vatPeriod: "دورية إقرار الشركة الضريبي", save: "حفظ", saved: "تم الحفظ", active: "نشط", inactive: "موقوف",
     deactivate: "إيقاف", activate: "تفعيل", you: "أنت",
+    create: "إنشاء مستخدم جديد", fullName: "الاسم", username: "اسم المستخدم", newPassword: "كلمة المرور",
+    usernameHint: "حروف إنجليزية صغيرة وأرقام فقط (مثال: ahmed أو ali.site)، من 3 إلى 30 حرفًا.",
+    passwordHint: "8 أحرف على الأقل.", createBtn: "إنشاء", resetPassword: "تغيير كلمة المرور", resetBtn: "تغيير",
+    noServiceKey: "لإنشاء المستخدمين من هنا أضف المتغير SUPABASE_SERVICE_ROLE_KEY في Netlify (راجع START_HERE). حتى ذلك: أنشئهم من Supabase بالبريد اسم-المستخدم@hisabat.local ثم أضفهم بالأسفل.",
+    orExisting: "أو إضافة مستخدم موجود في Supabase", login: "الدخول",
   },
   soon: "قيد البناء", soonText: "هذه الشاشة ضمن المراحل القادمة من البناء.",
   back: "رجوع",
@@ -153,8 +158,8 @@ type Dict = typeof ar;
 
 const en: Dict = {
   appName: "Hisabat",
-  login: "Sign in", email: "Email", password: "Password",
-  loginBtn: "Sign in", loggingIn: "Signing in…", loginError: "Wrong email or password",
+  login: "Sign in", email: "Username or email", password: "Password",
+  loginBtn: "Sign in", loggingIn: "Signing in…", loginError: "Wrong username or password",
   logout: "Sign out",
   noCompany: "Your account is not linked to a company yet. Ask an admin to add you.",
   nav: {
@@ -283,11 +288,16 @@ const en: Dict = {
     st: { pending_1: "Awaiting approver 1", pending_2: "Awaiting approver 2", open: "Paid — open", rejected: "Rejected", settled: "Settled" },
   },
   set: {
-    title: "Settings", members: "Users", addMember: "Add user", email: "Email", role: "Role",
+    title: "Settings", members: "Users", addMember: "Add user", email: "Username or email", role: "Role",
     addHint: "Create the user first in Supabase → Authentication → Users, then add them here by email.",
     add: "Add", approvers: "Custody approvers", approversHint: "Approver 1 gives the first approval, approver 2 the final one.",
     company: "Company", vatPeriod: "Company VAT filing period", save: "Save", saved: "Saved", active: "Active", inactive: "Disabled",
     deactivate: "Disable", activate: "Enable", you: "you",
+    create: "Create a new user", fullName: "Name", username: "Username", newPassword: "Password",
+    usernameHint: "Lower-case English letters and digits only (e.g. ahmed or ali.site), 3–30 characters.",
+    passwordHint: "At least 8 characters.", createBtn: "Create", resetPassword: "Change password", resetBtn: "Change",
+    noServiceKey: "To create users here, add SUPABASE_SERVICE_ROLE_KEY in Netlify (see START_HERE). Until then: create them in Supabase as username@hisabat.local, then add them below.",
+    orExisting: "Or add a user that already exists in Supabase", login: "Login",
   },
   soon: "Under construction", soonText: "This screen is part of the upcoming build phases.",
   back: "Back",

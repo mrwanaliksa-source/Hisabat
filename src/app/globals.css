@@ -312,3 +312,4 @@ details.card[open] > summary { margin-block-end: 14px; }
 .chip.cs-settled { background: var(--teal-soft); color: var(--teal-2); }
 h3 { font-size: 1rem; margin: 0; }
 @media (max-width: 820px) { .inline-form { flex-wrap: wrap; } td.clip { max-width: 160px; } }
+.pw-input { width: 130px; padding: 6px 8px; border: 1px solid #cfd8e1; border-radius: 8px; }

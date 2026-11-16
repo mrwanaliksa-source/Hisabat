@@ -2,6 +2,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getContext } from "@/lib/context";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { loginEmail, validUsername } from "@/lib/username";
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const back = (error: { message: string } | null) => {
@@ -12,7 +14,7 @@ const back = (error: { message: string } | null) => {
 export async function addMember(fd: FormData) {
   const { supabase, company } = await getContext();
   if (!company) return;
-  const { error } = await supabase.rpc("add_member", { p_company: company.id, p_email: s(fd, "email"), p_role: s(fd, "role") });
+  const { error } = await supabase.rpc("add_member", { p_company: company.id, p_email: loginEmail(s(fd, "email")), p_role: s(fd, "role") });
   back(error);
 }
 
@@ -33,5 +35,50 @@ export async function saveCompany(fd: FormData) {
   const { error } = await supabase.from("companies")
     .update({ custody_approver_1: a1, custody_approver_2: a2, vat_period: s(fd, "vat_period") || "quarterly" })
     .eq("id", company.id);
+  back(error);
+}
+
+const ROLES = ["admin", "reviewer", "entry", "expense", "custody"];
+
+/** Creates a login (username + password) and adds it to the company. Admin only. */
+export async function createUser(fd: FormData) {
+  const { supabase, company, role } = await getContext();
+  if (!company || role !== "admin") back({ message: "Permission denied" });
+  const admin = supabaseAdmin();
+  if (!admin) back({ message: "SUPABASE_SERVICE_ROLE_KEY is not set in Netlify" });
+
+  const username = s(fd, "username").toLowerCase();
+  const password = String(fd.get("password") ?? "");
+  const fullName = s(fd, "full_name");
+  const newRole = s(fd, "role");
+  if (!validUsername(username)) back({ message: "اسم المستخدم غير صالح: حروف إنجليزية صغيرة وأرقام فقط / Invalid username" });
+  if (password.length < 8) back({ message: "كلمة المرور 8 أحرف على الأقل / Password must be at least 8 characters" });
+  if (!ROLES.includes(newRole)) back({ message: "Invalid role" });
+
+  const { error: e1 } = await admin!.auth.admin.createUser({
+    email: loginEmail(username), password, email_confirm: true,
+    user_metadata: { full_name: fullName || username, username },
+  });
+  if (e1) back({ message: /already|registered|exists/i.test(e1.message)
+    ? "اسم المستخدم مستخدم من قبل / Username already exists" : e1.message });
+
+  // membership is added as the signed-in admin, through the normal permission checks
+  const { error: e2 } = await supabase!.rpc("add_member", { p_company: company!.id, p_email: loginEmail(username), p_role: newRole });
+  back(e2);
+}
+
+/** Sets a new password for a member of this company. Admin only. */
+export async function resetPassword(fd: FormData) {
+  const { supabase, company, role } = await getContext();
+  if (!company || role !== "admin") back({ message: "Permission denied" });
+  const admin = supabaseAdmin();
+  if (!admin) back({ message: "SUPABASE_SERVICE_ROLE_KEY is not set in Netlify" });
+  const userId = s(fd, "user");
+  const password = String(fd.get("password") ?? "");
+  if (password.length < 8) back({ message: "كلمة المرور 8 أحرف على الأقل / Password must be at least 8 characters" });
+  // only members of the admin's own company
+  const { data: m } = await supabase!.from("memberships").select("user_id").eq("company_id", company!.id).eq("user_id", userId).maybeSingle();
+  if (!m) back({ message: "User is not a member of this company" });
+  const { error } = await admin!.auth.admin.updateUserById(userId, { password });
   back(error);
 }
