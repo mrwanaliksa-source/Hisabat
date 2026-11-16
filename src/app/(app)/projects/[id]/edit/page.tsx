@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang } from "@/lib/i18n";
-import { saveProject } from "./actions";
+import { saveProject, savePartner } from "./actions";
+import { PartnerTerms } from "./PartnerTerms";
 
 const pct = (v: unknown) => (v == null ? "" : String(Math.round(Number(v) * 10000) / 100));
 
@@ -19,6 +20,17 @@ export default async function EditProject({ params, searchParams }: { params: Pr
   const { count } = await supabase.from("sales_documents").select("id", { count: "exact", head: true })
     .eq("project_id", id).eq("status", "posted").in("doc_type", ["progress_claim", "retention_release"]);
   const locked = (count ?? 0) > 0;
+  const [{ data: agreements }, { count: postedAny }, { data: partners }] = await Promise.all([
+    supabase.from("partner_agreements").select("id,partner_id,share_pct,basis,effective_from,effective_to,partner:parties(name_ar,name_en,vat_period)")
+      .eq("project_id", id).order("effective_from"),
+    supabase.from("sales_documents").select("id", { count: "exact", head: true }).eq("project_id", id).eq("status", "posted"),
+    supabase.from("parties").select("id,name_ar,name_en").eq("company_id", company.id).eq("kind", "partner").order("name_ar"),
+  ]);
+  const current = (agreements ?? []).find((a) => !a.effective_to) ?? null;
+  const { count: shares } = current
+    ? await supabase.from("partner_entitlements").select("id", { count: "exact", head: true }).eq("agreement_id", current.id).is("reversed_at", null)
+    : { count: 0 };
+  const cp = current?.partner as unknown as { name_ar: string; name_en: string | null; vat_period: string | null } | undefined;
   const F = ({ label, children }: { label: string; children: React.ReactNode }) => <label className="field"><span>{label}</span>{children}</label>;
 
   return (
@@ -65,6 +77,20 @@ export default async function EditProject({ params, searchParams }: { params: Pr
         </fieldset>
 
         <button className="btn primary self-start" data-act="save">{t.detail.save}</button>
+      </form>
+
+      <form action={savePartner} className="stack-lg" id="partner">
+        <input type="hidden" name="id" value={id} />
+        <PartnerTerms t={t} closed={p.status === "closed"}
+          holder={p.contract_holder as "company" | "partner"}
+          holderLocked={(postedAny ?? 0) > 0}
+          basisLocked={(shares ?? 0) > 0}
+          needsEffectiveDate={(shares ?? 0) > 0}
+          current={current ? { partnerId: current.partner_id, name: cp?.name_ar ?? "", pct: Number(current.share_pct),
+                               basis: current.basis as "collections" | "profit_at_close", from: current.effective_from,
+                               vatPeriod: cp?.vat_period ?? "quarterly" } : null}
+          history={(agreements ?? []).map((a) => ({ pct: Number(a.share_pct), from: a.effective_from, to: a.effective_to }))}
+          partners={(partners ?? []).map((x) => ({ id: x.id, name: x.name_ar }))} />
       </form>
     </div>
   );

@@ -104,6 +104,25 @@ export function SalesForm({ t, projects, initialProject, initialType }: Props) {
       <aside className="form-side">
         <div className="card preview">
           <h3>{t.sales.calc}</h3>
+          {type === "progress_claim" && p ? (() => {
+            const pc = (f: number) => `${Math.round(f * 10000) / 100}%`;
+            return (
+              <>
+                <dl>
+                  <Row k={t.sales.workValue} v={toNum(work)} />
+                  <Row k={`${t.form.recovery} (${pc(p.terms.recovery_pct)})`} v={-c.recovery} />
+                  {toNum(discount) > 0 && <Row k={t.sales.discount} v={-toNum(discount)} />}
+                  <Row k={t.sales.invoiceThis} v={c.vatBase} strong accent />
+                  <Row k={t.form.vat} v={c.vat} />
+                  <Row k={t.sales.invoiceTotalPrint} v={c.invoiceTotal} strong accent />
+                  <Row k={`${t.form.retention} (${pc(p.terms.retention_pct)})`} v={-c.retention} />
+                  <Row k={t.sales.toCollect} v={c.due} strong />
+                  {p.partnerShare > 0 && <Row k={t.form.partnerShare} v={share} />}
+                </dl>
+                <p className="explain small">{t.sales.claimRule}</p>
+              </>
+            );
+          })() : (
           <dl>
             <Row k={valueLabel} v={toNum(work)} />
             {type === "progress_claim" && <Row k={t.form.recovery} v={-c.recovery} />}
@@ -116,6 +135,7 @@ export function SalesForm({ t, projects, initialProject, initialType }: Props) {
             <Row k={t.form.netDue} v={c.netDue} />
             {p && p.partnerShare > 0 && <Row k={t.form.partnerShare} v={share} accent />}
           </dl>
+          )}
           <p className="muted small">{t.sar}</p>
         </div>
       </aside>

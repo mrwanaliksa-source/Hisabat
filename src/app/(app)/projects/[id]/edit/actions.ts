@@ -26,3 +26,19 @@ export async function saveProject(fd: FormData) {
   revalidatePath(`/projects/${id}`); revalidatePath("/projects"); revalidatePath("/");
   redirect(`/projects/${id}?ok=edit`);
 }
+
+export async function savePartner(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = s(fd, "id");
+  const { error } = await supabase.rpc("update_partner_terms", {
+    p_project: id,
+    p: {
+      partner_id: s(fd, "partner_id"), partner_name: s(fd, "partner_name"), share_pct: frac(fd, "share_pct"),
+      basis: s(fd, "basis"), contract_holder: s(fd, "contract_holder"), effective_from: s(fd, "effective_from"),
+      partner_vat_period: s(fd, "partner_vat_period"),
+    },
+  });
+  if (error) redirect(`/projects/${id}/edit?err=${encodeURIComponent(error.message)}#partner`);
+  revalidatePath(`/projects/${id}`); revalidatePath("/projects"); revalidatePath("/"); revalidatePath("/sales/new");
+  redirect(`/projects/${id}?ok=edit`);
+}
