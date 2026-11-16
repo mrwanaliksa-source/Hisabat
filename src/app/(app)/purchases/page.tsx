@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Fragment } from "react";
+import { addCommitment, toggleCommitment } from "./actions";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
 import { Icon } from "@/components/Icon";
 
-export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ unpaid?: string; ok?: string }> }) {
+export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ unpaid?: string; ok?: string; err?: string }> }) {
   const sp = await searchParams;
   const lang = await getLang();
   const t = dict(lang);
@@ -23,6 +24,9 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       .eq("company_id", company.id).order("pay_date"),
     supabase.from("projects").select("id,code").eq("company_id", company.id),
   ]);
+  const { data: commits } = manager
+    ? await supabase.from("v_supplier_commitments").select("*").eq("company_id", company.id).order("created_at")
+    : { data: null };
   const advs = (advAll ?? []).filter((a) => Number(a.balance) > 0.004);
   const pcode = new Map((projs ?? []).map((x) => [x.id, x.code]));
   // payments without invoices, grouped by supplier (oldest first)
@@ -57,6 +61,45 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
         </div>
       </div>
       {sp.ok === "advance" && <p className="alert ok">✓ {t.adv.saved}</p>}
+      {sp.err && <p className="alert error">{sp.err}</p>}
+
+      {manager && (
+        <section className="card stack" id="commitments">
+          <h2>{t.cm.title}</h2>
+          <p className="muted small">{t.cm.hint}</p>
+          {commits && commits.length > 0 ? (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>{t.adv.supplier}</th><th>{t.cm.title1}</th><th>{t.exp.project}</th>
+                  <th className="n">{t.cm.total}</th><th className="n">{t.cm.paid}</th><th className="n">{t.cm.remaining}</th><th /></tr></thead>
+                <tbody>
+                  {commits.map((c) => (
+                    <tr key={c.id} className={c.closed_at ? "muted" : ""}>
+                      <td><b>{c.supplier_name}</b></td><td>{c.title}</td><td className="num">{c.project_id ? pcode.get(c.project_id) : "—"}</td>
+                      <td className="n num">{money(c.total_amount)}</td><td className="n num">{money(c.paid)}</td>
+                      <td className="n num">{c.closed_at ? <span className="chip tiny">{t.cm.closed}</span> : <b className={Number(c.remaining) > 0.004 ? "warn-text" : ""}>{money(c.remaining)}</b>}</td>
+                      <td><form action={toggleCommitment}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="close" value={c.closed_at ? "0" : "1"} />
+                        <button className="btn ghost sm" data-act="toggle-commitment">{c.closed_at ? t.cm.reopen : t.cm.close}</button></form></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="muted">{t.cm.none}</p>}
+          <details>
+            <summary className="btn soft sm">{t.cm.add}</summary>
+            <form action={addCommitment} className="grid-3 mt">
+              <label className="field"><span>{t.adv.supplier}<b className="req"> *</b></span><input name="supplier_name" required /></label>
+              <label className="field"><span>{t.cm.title1}<b className="req"> *</b></span><input name="title" required placeholder="نسبة مبيعات 1% من PO …" /></label>
+              <label className="field"><span>{t.cm.total}<b className="req"> *</b></span><input name="total_amount" inputMode="decimal" dir="ltr" required /></label>
+              <label className="field"><span>{t.exp.project}</span>
+                <select name="project_id" defaultValue=""><option value="">—</option>
+                  {(projs ?? []).map((pj) => <option key={pj.id} value={pj.id}>{pj.code}</option>)}</select></label>
+              <div className="field"><span>&nbsp;</span><button className="btn primary" data-act="add-commitment">{t.cm.add}</button></div>
+            </form>
+          </details>
+        </section>
+      )}
 
       {groups.size > 0 && (
         <section className="card" id="advances">

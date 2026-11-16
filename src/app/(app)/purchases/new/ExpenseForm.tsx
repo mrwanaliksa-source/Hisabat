@@ -8,17 +8,20 @@ import type { Dict } from "@/lib/i18n";
 
 type Opt = { id: string; name: string; code?: string; group?: string; projectId?: string | null; partner?: string };
 type Adv = { id: string; supplier: string; balance: number; projectId: string | null };
-type Props = { t: Dict; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[] };
+type Cm = { id: string; supplier: string; title: string; remaining: number; projectId: string | null };
+type Props = { t: Dict; commitments: Cm[]; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[] };
 
 const validVat = (v: string) => /^3\d{13}3$/.test(v.replace(/\D/g, ""));
 
-export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances }: Props) {
+export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances, commitments }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(createExpense, {});
   const [supplier, setSupplier] = useState("");
   const [projectId, setProjectId] = useState(projects.length === 1 ? projects[0].id : "");
   const [vatNo, setVatNo] = useState("");
   const [net, setNet] = useState("");
   const [noVat, setNoVat] = useState(false);
+  const [cmId, setCmId] = useState("");
+  const cm = commitments.find((c) => c.id === cmId) ?? null;
   const defPay = banks[1] ? `account:${banks[1].id}` : banks[0] ? `account:${banks[0].id}` : "credit";
   const [pay, setPay] = useState(defPay);
   const adv = pay.startsWith("advance:") ? advances.find((a) => a.id === pay.slice(8)) ?? null : null;
@@ -81,13 +84,23 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
           </label>
           <label className="field">
             <span>{t.exp.supplier}<b className="req"> *</b></span>
-            <input name="supplier_name" required list="suppliers" value={adv ? adv.supplier : supplier} readOnly={!!adv} className={adv ? "computed" : undefined} onChange={(e) => onSupplier(e.target.value)} />
+            <input name="supplier_name" required list="suppliers" value={adv ? adv.supplier : cm ? cm.supplier : supplier} readOnly={!!adv || !!cm} className={adv || cm ? "computed" : undefined} onChange={(e) => onSupplier(e.target.value)} />
             <datalist id="suppliers">{suppliers.map((s) => <option key={s.name} value={s.name} />)}</datalist>
           </label>
           <label className="field">
             <span>{t.exp.supplierVat}</span>
             <input name="supplier_vat" dir="ltr" inputMode="numeric" maxLength={15} value={vatNo} onChange={(e) => setVatNo(e.target.value)} />
           </label>
+          {commitments.length > 0 && (
+            <label className="field">
+              <span>{t.cm.on}</span>
+              <select name="commitment_id" value={cmId} onChange={(e) => { setCmId(e.target.value); const c = commitments.find((x) => x.id === e.target.value); if (c?.projectId) setProjectId(c.projectId); }}>
+                <option value="">{t.cm.noneOpt}</option>
+                {commitments.map((c) => <option key={c.id} value={c.id}>{c.supplier} — {c.title} — {t.cm.remaining} {fmt(c.remaining)}</option>)}
+              </select>
+              {cm && <small className="muted">{t.cm.remaining} {t.cm.after}: <b className="num">{fmt(r2(cm.remaining - total))}</b></small>}
+            </label>
+          )}
           <label className="field">
             <span>{t.exp.docNumber}</span>
             <input name="doc_number" dir="ltr" />

@@ -157,6 +157,12 @@ const ar = {
     accessHint: "لكل موظف: اختار دوره في كل شركة، أو «—» علشان ما يدخلش عليها. بيظهر هنا موظفين الشركات اللي إنت أدمن فيها.",
     none: "— لا يدخل", added: "تمت إضافة الشركة", saved: "تم حفظ الصلاحية",
   },
+  cm: {
+    title: "التزامات للموردين (نسب واتفاقات)", hint: "مبلغ متفق عليه بيتدفع على مراحل (زي نسبة مبيعات). مش بيتحسب تكلفة غير اللي بيتدفع منه.",
+    title1: "الالتزام", total: "الإجمالي", paid: "المدفوع", remaining: "الباقي", add: "إضافة التزام", none: "لا توجد التزامات.",
+    on: "على حساب التزام", noneOpt: "— مش على حساب التزام", link: "ربط بالتزام", linked: "على حساب",
+    close: "قفل", reopen: "فتح", closed: "مقفول", after: "بعد المصروف ده", of: "من",
+  },
   adv: {
     title: "دفعات بدون فواتير (تحت الحساب)", new: "دفعة لمورد بدون فاتورة", count: "عدد الدفعات", oldest: "أقدم دفعة", days: "يوم", waiting: "منتظرة فاتورة", closedByInvoice: "اتخصمت من فاتورة", chase: "الموردين دول اتدفعلهم فلوس ولسه مجابوش فواتير — اطلبها منهم.", supplierTotal: "إجمالي بدون فاتورة", none: "لا توجد دفعات مقدمة مفتوحة.",
     supplier: "المورد", notes: "البيان", notesHint: "مثال: دفعة تحت الحساب إيجار معدات",
@@ -386,6 +392,12 @@ const en: Dict = {
     link: "Direct login link", copy: "Copy", access: "Who can enter which company",
     accessHint: "For each person: pick their role in each company, or “—” to block it. Shows the staff of companies where you are admin.",
     none: "— no access", added: "Company added", saved: "Access saved",
+  },
+  cm: {
+    title: "Supplier commitments (commissions & agreements)", hint: "An agreed total paid in stages (e.g. a sales commission). Only what is paid becomes a cost.",
+    title1: "Commitment", total: "Total", paid: "Paid", remaining: "Remaining", add: "Add commitment", none: "No commitments.",
+    on: "Against a commitment", noneOpt: "— not against a commitment", link: "Link to commitment", linked: "Against",
+    close: "Close", reopen: "Reopen", closed: "Closed", after: "after this expense", of: "of",
   },
   adv: {
     title: "Payments without invoices (on account)", new: "Pay a supplier without an invoice", count: "Payments", oldest: "Oldest payment", days: "days", waiting: "Awaiting invoice", closedByInvoice: "Matched to an invoice", chase: "These suppliers were paid but have not sent invoices yet — ask them for invoices.", supplierTotal: "Total without invoice", none: "No open supplier advances.",

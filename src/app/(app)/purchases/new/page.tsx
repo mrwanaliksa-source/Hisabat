@@ -16,6 +16,8 @@ export default async function NewExpense() {
     supabase.from("parties").select("name_ar,vat_number").eq("company_id", company.id).eq("kind", "supplier").order("name_ar").limit(500),
     supabase.from("v_supplier_advances").select("id,supplier_name,balance,project_id").eq("company_id", company.id).gt("balance", 0).order("pay_date"),
   ]);
+  const { data: commits } = await supabase.from("v_supplier_commitments").select("id,supplier_name,title,remaining,project_id")
+    .eq("company_id", company.id).is("closed_at", null).order("created_at");
   const label = (x: { name_ar: string; name_en: string | null }) => (lang === "en" && x.name_en) || x.name_ar;
   return (
     <div className="stack-lg">
@@ -25,6 +27,7 @@ export default async function NewExpense() {
           partner: p.contract_holder === "partner" ? ((p.holder as unknown as { name_ar: string } | null)?.name_ar ?? "") : undefined }))}
         banks={(banks ?? []).map((b) => ({ id: b.id, name: `${b.code} · ${label(b)}`, projectId: b.project_id }))}
         suppliers={(suppliers ?? []).map((s) => ({ name: s.name_ar, vat: s.vat_number ?? "" }))}
+        commitments={(commits ?? []).map((c) => ({ id: c.id, supplier: c.supplier_name, title: c.title, remaining: Number(c.remaining), projectId: c.project_id }))}
         advances={(advs ?? []).map((a) => ({ id: a.id, supplier: a.supplier_name, balance: Number(a.balance), projectId: a.project_id }))} />
     </div>
   );

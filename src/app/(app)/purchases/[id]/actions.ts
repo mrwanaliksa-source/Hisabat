@@ -40,3 +40,11 @@ export async function payByPartner(fd: FormData) {
   revalidatePath(`/purchases/${id}`); revalidatePath("/purchases"); revalidatePath("/");
   redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=paid"}`);
 }
+
+export async function linkCommitment(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = String(fd.get("id"));
+  const { error } = await supabase.rpc("link_to_commitment", { p_doc: id, p_commitment: String(fd.get("commitment") || "") || null });
+  revalidatePath(`/purchases/${id}`); revalidatePath("/purchases");
+  redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : ""}`);
+}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
-import { paySupplier, applyAdvance, payByPartner } from "./actions";
+import { paySupplier, applyAdvance, payByPartner, linkCommitment } from "./actions";
 
 type Params = Promise<{ id: string }>;
 
@@ -34,6 +34,10 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
     canApply ? supabase.from("v_supplier_advances").select("id,pay_date,notes,balance").eq("supplier_id", d.supplier_id).gt("balance", 0).order("pay_date")
              : Promise.resolve({ data: null }),
   ]);
+  const { data: cms } = canApply
+    ? await supabase.from("v_supplier_commitments").select("id,title,total_amount,paid,remaining,closed_at").eq("supplier_id", d.supplier_id)
+    : { data: null };
+  const linkedCm = (cms ?? []).find((c) => c.id === d.commitment_id) ?? null;
   const { data: heldProjects } = manager
     ? await supabase.from("projects").select("id,code,holder:parties!projects_holder_partner_id_fkey(name_ar)")
         .eq("company_id", company.id).eq("contract_holder", "partner").neq("status", "closed").order("code")
@@ -65,7 +69,18 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
             {Number(d.vat_amount) > 0 && <div><dt>{t.exp.vat}</dt><dd>{d.vat_eligibility === "full" ? t.exp.vatDeductible : t.exp.vatNotDeductible}</dd></div>}
             {supp?.vat_number && <div><dt>{t.exp.supplierVat}</dt><dd className="num">{supp.vat_number}</dd></div>}
             <div><dt>{t.exp.by}</dt><dd>{who?.full_name ?? ""}</dd></div>
+            {linkedCm && <div className="hl"><dt>{t.cm.linked}</dt><dd>{linkedCm.title} — {t.cm.paid} <span className="num">{money(linkedCm.paid)}</span> {t.cm.of} <span className="num">{money(linkedCm.total_amount)}</span>، {t.cm.remaining} <b className="num warn-text">{money(linkedCm.remaining)}</b></dd></div>}
           </dl>
+          {canApply && cms && cms.length > 0 && (
+            <form action={linkCommitment} className="inline-form">
+              <input type="hidden" name="id" value={id} />
+              <select name="commitment" defaultValue={d.commitment_id ?? ""}>
+                <option value="">{t.cm.noneOpt}</option>
+                {cms.map((c) => <option key={c.id} value={c.id}>{c.title} — {t.cm.remaining} {money(c.remaining)}</option>)}
+              </select>
+              <button className="btn ghost sm" data-act="link-commitment">{t.cm.link}</button>
+            </form>
+          )}
           {photoUrl && <a className="btn soft sm" href={photoUrl} target="_blank" rel="noreferrer">{t.exp.viewPhoto}</a>}
         </section>
 

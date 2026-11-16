@@ -20,6 +20,9 @@ export default async function PayablesReport({ searchParams }: { searchParams: P
     supabase.from("v_supplier_advances").select("id,supplier_name,pay_date,notes,amount,balance").eq("company_id", company.id).gt("balance", 0).order("pay_date"),
   ]);
   const advTotal = (advs ?? []).reduce((s, a) => s + Number(a.balance), 0);
+  const { data: cms } = await supabase.from("v_supplier_commitments").select("id,supplier_name,title,total_amount,paid,remaining")
+    .eq("company_id", company.id).is("closed_at", null).gt("remaining", 0).order("supplier_name");
+  const cmTotal = (cms ?? []).reduce((s, c) => s + Number(c.remaining), 0);
   const left = new Map((bal ?? []).map((b) => [b.id, Number(b.balance)]));
   const rows = (docs ?? []).filter((d) => (left.get(d.id) ?? 0) > 0.004);
   type N = { name_ar: string; name_en: string | null } | null;
@@ -40,6 +43,20 @@ export default async function PayablesReport({ searchParams }: { searchParams: P
           <table><tbody>{[...bySupplier.values()].map((s) => <tr key={s.name}><td>{s.name}</td><td className="n num"><b>{money(s.total)}</b></td></tr>)}</tbody>
             <tfoot><tr><th>{t.rep.total}</th><th className="n num">{money(total)}</th></tr></tfoot></table>
         ) : <p className="muted">{t.rep.none}</p>}
+      </section>
+
+      <section className="card">
+        <h2>{t.cm.title}</h2>
+        <p className="muted small">{t.cm.hint}</p>
+        {cms && cms.length > 0 ? (
+          <table>
+            <thead><tr><th>{t.adv.supplier}</th><th>{t.cm.title1}</th><th className="n">{t.cm.total}</th><th className="n">{t.cm.paid}</th><th className="n">{t.cm.remaining}</th></tr></thead>
+            <tbody>{cms.map((c) => (
+              <tr key={c.id}><td>{c.supplier_name}</td><td className="muted">{c.title}</td><td className="n num">{money(c.total_amount)}</td>
+                <td className="n num">{money(c.paid)}</td><td className="n num"><b>{money(c.remaining)}</b></td></tr>))}</tbody>
+            <tfoot><tr><th colSpan={4}>{t.rep.total}</th><th className="n num">{money(cmTotal)}</th></tr></tfoot>
+          </table>
+        ) : <p className="muted">{t.cm.none}</p>}
       </section>
 
       <section className="card">
