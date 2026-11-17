@@ -20,7 +20,7 @@ export default async function VatReport({ searchParams }: { searchParams: Promis
     supabase.from("projects").select("id,contract_holder,holder_partner_id").eq("company_id", company.id),
     supabase.from("sales_documents").select("project_id,issue_date,supply_date,payment_order_date,vat_base,vat_amount,customer:parties(is_government)")
       .eq("company_id", company.id).eq("status", "posted"),
-    supabase.from("purchase_documents").select("project_id,issue_date,net_amount,vat_amount,eligible_vat,vat_owner_partner")
+    supabase.from("purchase_documents").select("project_id,issue_date,net_amount,vat_amount,eligible_vat,vat_owner_partner,vat_owner_project")
       .eq("company_id", company.id).eq("status", "posted"),
     supabase.from("parties").select("id,name_ar,name_en,vat_period").eq("company_id", company.id).eq("kind", "partner"),
   ]);
@@ -46,7 +46,9 @@ export default async function VatReport({ searchParams }: { searchParams: Promis
     add(holder.get(d.project_id) ?? "company", date, (b) => { b.sales += Number(d.vat_base); b.output += Number(d.vat_amount); });
   }
   for (const d of purch ?? []) {
-    const owner = d.vat_owner_partner || (d.project_id && holder.get(d.project_id)) || "company";
+    // whoever paid owns the invoice VAT (a partner that reclaimed it, or the part whose money paid it)
+    const vp = d.vat_owner_project ?? d.project_id;
+    const owner = d.vat_owner_partner || (vp && holder.get(vp)) || "company";
     add(owner, d.issue_date, (b) => {
       b.purchases += Number(d.net_amount); b.input += Number(d.eligible_vat); b.nonDed += Number(d.vat_amount) - Number(d.eligible_vat);
     });
