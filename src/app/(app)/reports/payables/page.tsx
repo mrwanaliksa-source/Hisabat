@@ -15,7 +15,7 @@ export default async function PayablesReport({ searchParams }: { searchParams: P
 
   const [{ data: bal }, { data: docs }, { data: advs }] = await Promise.all([
     supabase.from("v_purchase_balances").select("id,balance").eq("company_id", company.id).gt("balance", 0),
-    supabase.from("purchase_documents").select("id,issue_date,doc_number,details,total_amount,supplier_id,project:projects(code),supplier:parties(name_ar,name_en)")
+    supabase.from("purchase_documents").select("id,issue_date,doc_number,details,total_amount,supplier_id,project:projects(code),supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en)")
       .eq("company_id", company.id).eq("status", "posted").lte("issue_date", to).order("issue_date"),
     supabase.from("v_supplier_advances").select("id,supplier_name,pay_date,notes,amount,balance").eq("company_id", company.id).gt("balance", 0).order("pay_date"),
   ]);

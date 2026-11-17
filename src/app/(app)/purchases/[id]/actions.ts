@@ -56,3 +56,11 @@ export async function deleteExpense(fd: FormData) {
   revalidatePath("/purchases"); revalidatePath("/"); revalidatePath("/cash");
   redirect("/purchases?ok=deleted");
 }
+
+export async function deletePayment(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = String(fd.get("id"));
+  const { error } = await supabase.rpc("delete_supplier_payment", { p_payment: String(fd.get("payment")), p_reason: String(fd.get("reason") ?? "") });
+  revalidatePath(`/purchases/${id}`); revalidatePath("/purchases"); revalidatePath("/"); revalidatePath("/cash");
+  redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=paymentDeleted"}`);
+}

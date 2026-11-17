@@ -147,6 +147,12 @@ const ar = {
     holds: "فلوس", general: "عام (الشركة)", addBank: "إضافة بنك / صندوق", bankName: "اسم الحساب",
     loanNote: "هيتسجل سلفة: {works} مديون لـ {funding} بالمبلغ ده.", moneyOf: "فلوس",
   },
+  pt: {
+    partner: "شريك", projects: "المشروعات والنسب", vat: "ضريبة الشريك (على مشروعاتنا)", vatOutput: "ضريبة فواتيره (مخرجات)",
+    vatInput: "ضريبة مصاريف بيسترجعها (مدخلات)", vatPaid: "سدده للهيئة", vatOther: "تسويات", vatDue: "باقي عليه للهيئة", vatCredit: "رصيد لصالحه",
+    vatNet: "الصافي", vatMonthly: "الضريبة شهر بشهر", vatNote: "من واقع المسجل في البورتال على مشروعاتنا معاه فقط، مش إقراره كله.",
+    money: "فلوس مشروعاتنا اللي معاه", expensesPaid: "مصاريف دفعها عننا", heldNow: "الباقي معاه دلوقتي", share: "نسبته",
+  },
   co: {
     choose: "اختار الشركة", chooseHint: "حسابك له صلاحية على أكتر من شركة. اختار هتشتغل على أنهي واحدة؛ وتقدر تبدّل من فوق في أي وقت.",
     noAccess: "مالكش صلاحية على الشركة دي.", switch: "تبديل الشركة", enter: "دخول",
@@ -170,7 +176,7 @@ const ar = {
     payFrom: "خصم من دفعة مقدمة", leftNote: "اللي يزيد عن الدفعة يفضل آجل على المورد.",
     apply: "خصم من الدفعة المقدمة", applyTitle: "خصم من دفعة مقدمة للمورد", choose: "الدفعة",
     explain: "فلوس اتدفعت للمورد قبل الفاتورة. بتتسجل على المورد (مش مصروف)، ولما الفاتورة تيجي سجلها مصروف واختار «خصم من دفعة مقدمة».",
-    saved: "تم تسجيل الدفعة المقدمة", restFrom: "الباقي ({amount}) يتدفع من", payments: "دفعات", poolIs: "رصيد دفعات المورد ده بدون فواتير:", loanHint: "لو البنك فلوس جزء تاني غير المشروع اللي فوق (زي فلوس كرم على شغل الفاتح)، بتتسجل سلفة بين الجزءين أوتوماتيك.", appliedOk: "تم الخصم من الدفعة المقدمة",
+    saved: "تم تسجيل الدفعة المقدمة", restFrom: "الباقي ({amount}) يتدفع من", usedOn: "اتخصمت من فواتير", notUsed: "لسه ما اتخصمتش من أي فاتورة.", delete: "حذف الدفعة", deleteNote: "بتتشال الدفعة وقيدها والسلفة بين الأجزاء لو فيه، والفلوس بترجع للبنك. لو اتخصم منها على فواتير، احذف الخصم من صفحة الفاتورة الأول.", payments: "دفعات", poolIs: "رصيد دفعات المورد ده بدون فواتير:", loanHint: "لو البنك فلوس جزء تاني غير المشروع اللي فوق (زي فلوس كرم على شغل الفاتح)، بتتسجل سلفة بين الجزءين أوتوماتيك.", appliedOk: "تم الخصم من الدفعة المقدمة",
   },
   exp: {
     title: "المصروفات", new: "مصروف جديد", none: "لا توجد مصروفات بعد.", project: "المشروع", general: "مصروف عام (بدون مشروع)",
@@ -182,7 +188,7 @@ const ar = {
     totalsMismatch: "قبل الضريبة + الضريبة لا يساوي الإجمالي", save: "حفظ المصروف", saving: "جارٍ الحفظ…",
     by: "أدخله", paid: "مدفوع", balance: "متبقي للمورد", payNow: "سداد للمورد", custodyRow: "عهدة على",
     openCustodies: "عهد مفتوحة", posted: "تم تسجيل المصروف", addVat: "احسب 15%", uploading: "جارٍ رفع الصورة…",
-    viewPhoto: "عرض الصورة", byPartner: "دفعها الشريك", byPartnerFrom: "من فلوس المشروع اللي مع", ofWhichAdv: "منها دفعة منتظرة فاتورة", edit: "تعديل المصروف", howPaid: "اتدفعت إزاي", srcAdvance: "من دفعات المورد بدون فاتورة", editing: "تعديل مصروف متسجل", reason: "السبب", edited: "تم تعديل المصروف", deleted: "تم حذف المصروف", delete: "حذف المصروف", deleteConfirm: "متأكد — احذف المصروف وكل اللي اترتب عليه", deleteNote: "بيتشال المصروف وقيوده وسداده (بنك، عهدة، شريك، دفعة مقدمة) والسلفة بين الأجزاء لو فيه. البنك والعهدة والدفعات بترجع زي ما كانت، والسبب بيتسجل في سجل التدقيق.", editNote: "الحفظ هيلغي المصروف القديم وسداده ويسجله من جديد بالبيانات وطريقة الدفع اللي هنا. البنك والعهدة والدفعات بيتظبطوا لوحدهم.", ofWhichCus: "منها عهدة لم تُصفَّ", partnerReclaims: "الشريك هيسترجع ضريبة الفاتورة دي في إقراره (الضريبة مش هتتحسب تكلفة)", noVat: "بدون ضريبة", vatAuto: "تحسب تلقائيًا 15%",
+    viewPhoto: "عرض الصورة", byPartner: "دفعها الشريك", byPartnerFrom: "من فلوس المشروع اللي مع", ofWhichAdv: "منها دفعة منتظرة فاتورة", edit: "تعديل المصروف", howPaid: "اتدفعت إزاي", deletePayment: "حذف السداد ده", paymentDeleted: "تم حذف السداد", srcAdvance: "من دفعات المورد بدون فاتورة", editing: "تعديل مصروف متسجل", reason: "السبب", edited: "تم تعديل المصروف", deleted: "تم حذف المصروف", delete: "حذف المصروف", deleteConfirm: "متأكد — احذف المصروف وكل اللي اترتب عليه", deleteNote: "بيتشال المصروف وقيوده وسداده (بنك، عهدة، شريك، دفعة مقدمة) والسلفة بين الأجزاء لو فيه. البنك والعهدة والدفعات بترجع زي ما كانت، والسبب بيتسجل في سجل التدقيق.", editNote: "الحفظ هيلغي المصروف القديم وسداده ويسجله من جديد بالبيانات وطريقة الدفع اللي هنا. البنك والعهدة والدفعات بيتظبطوا لوحدهم.", ofWhichCus: "منها عهدة لم تُصفَّ", partnerReclaims: "الشريك هيسترجع ضريبة الفاتورة دي في إقراره (الضريبة مش هتتحسب تكلفة)", noVat: "بدون ضريبة", vatAuto: "تحسب تلقائيًا 15%",
   },
   cus: {
     title: "العهد", request: "طلب عهدة", none: "لا توجد عهد.", amount: "المبلغ المطلوب", purpose: "الغرض من العهدة",
@@ -383,6 +389,12 @@ const en: Dict = {
     holds: "money of", general: "General (company)", addBank: "Add bank / cash account", bankName: "Account name",
     loanNote: "A loan will be recorded: {works} owes {funding} this amount.", moneyOf: "money of",
   },
+  pt: {
+    partner: "Partner", projects: "Projects & shares", vat: "Partner VAT (on our projects)", vatOutput: "VAT on its invoices (output)",
+    vatInput: "Purchase VAT it reclaims (input)", vatPaid: "Paid to ZATCA", vatOther: "Adjustments", vatDue: "Still due to ZATCA", vatCredit: "In its favour",
+    vatNet: "Net", vatMonthly: "VAT by month", vatNote: "Only what is recorded in the portal on our projects with it — not its full return.",
+    money: "Our project money it holds", expensesPaid: "Expenses it paid for us", heldNow: "Held now", share: "Its share",
+  },
   co: {
     choose: "Choose a company", chooseHint: "Your account can access more than one company. Pick one to work in; you can switch at the top any time.",
     noAccess: "You don't have access to this company.", switch: "Switch company", enter: "Enter",
@@ -406,7 +418,7 @@ const en: Dict = {
     payFrom: "Deduct from an advance", leftNote: "Anything above the advance stays payable to the supplier.",
     apply: "Deduct from advance", applyTitle: "Deduct from a supplier advance", choose: "Advance",
     explain: "Money paid to a supplier before the invoice. It is recorded on the supplier (not an expense); when the invoice arrives, record it as an expense and choose “Deduct from an advance”.",
-    saved: "Advance recorded", restFrom: "The rest ({amount}) is paid from", payments: "payments", poolIs: "This supplier's payments without invoices:", loanHint: "If the account holds another part's money than the project above (e.g. Kram's money on Al-Fatih's works), a loan between the parts is recorded automatically.", appliedOk: "Deducted from the advance",
+    saved: "Advance recorded", restFrom: "The rest ({amount}) is paid from", usedOn: "Deducted on invoices", notUsed: "Not deducted on any invoice yet.", delete: "Delete payment", deleteNote: "Removes the payment, its entry and any loan between parts; the money returns to the account. If it was deducted on invoices, remove those deductions on the invoice page first.", payments: "payments", poolIs: "This supplier's payments without invoices:", loanHint: "If the account holds another part's money than the project above (e.g. Kram's money on Al-Fatih's works), a loan between the parts is recorded automatically.", appliedOk: "Deducted from the advance",
   },
   exp: {
     title: "Expenses", new: "New expense", none: "No expenses yet.", project: "Project", general: "General expense (no project)",
@@ -418,7 +430,7 @@ const en: Dict = {
     totalsMismatch: "Amount + VAT does not equal the total", save: "Save expense", saving: "Saving…",
     by: "Entered by", paid: "Paid", balance: "Owed to supplier", payNow: "Pay supplier", custodyRow: "Custody held by",
     openCustodies: "Open custodies", posted: "Expense recorded", addVat: "Add 15%", uploading: "Uploading photo…",
-    viewPhoto: "View photo", byPartner: "Paid by the partner", byPartnerFrom: "From the project money held by", ofWhichAdv: "incl. payments awaiting invoice", edit: "Edit expense", howPaid: "How it was paid", srcAdvance: "From the supplier's payments without invoice", editing: "Editing a recorded expense", reason: "Reason", edited: "Expense updated", deleted: "Expense deleted", delete: "Delete expense", deleteConfirm: "I am sure — delete the expense and everything it caused", deleteNote: "Removes the expense, its entries, its payment (bank, custody, partner, advance) and any loan between parts. Balances return to what they were; the reason is kept in the audit log.", editNote: "Saving cancels the old expense and its payment and records it again with the data and payment method here. Balances adjust automatically.", ofWhichCus: "incl. custody not yet settled", partnerReclaims: "The partner reclaims this invoice's VAT in its return (VAT is not a cost)", noVat: "No VAT", vatAuto: "Calculated automatically at 15%",
+    viewPhoto: "View photo", byPartner: "Paid by the partner", byPartnerFrom: "From the project money held by", ofWhichAdv: "incl. payments awaiting invoice", edit: "Edit expense", howPaid: "How it was paid", deletePayment: "Delete this payment", paymentDeleted: "Payment deleted", srcAdvance: "From the supplier's payments without invoice", editing: "Editing a recorded expense", reason: "Reason", edited: "Expense updated", deleted: "Expense deleted", delete: "Delete expense", deleteConfirm: "I am sure — delete the expense and everything it caused", deleteNote: "Removes the expense, its entries, its payment (bank, custody, partner, advance) and any loan between parts. Balances return to what they were; the reason is kept in the audit log.", editNote: "Saving cancels the old expense and its payment and records it again with the data and payment method here. Balances adjust automatically.", ofWhichCus: "incl. custody not yet settled", partnerReclaims: "The partner reclaims this invoice's VAT in its return (VAT is not a cost)", noVat: "No VAT", vatAuto: "Calculated automatically at 15%",
   },
   cus: {
     title: "Custody", request: "Request custody", none: "No custody yet.", amount: "Amount requested", purpose: "Purpose",

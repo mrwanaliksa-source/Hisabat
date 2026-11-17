@@ -130,7 +130,7 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
             <>
               {agreements.map((a) => (
                 <p key={a.id} className="partner-line">
-                  <b>{name(a.partner as unknown as { name_ar: string; name_en: string | null })}</b>
+                  <Link className="link" href={`/partners/${a.partner_id}`}><b>{name(a.partner as unknown as { name_ar: string; name_en: string | null })}</b></Link>
                   <span className="chip num">{pct(a.share_pct)}</span>
                   <span className="muted small num">{a.effective_from}</span>
                   <span className="muted small">{a.basis === "profit_at_close" ? t.pp.basisProfit : t.pp.basisCollections}</span>

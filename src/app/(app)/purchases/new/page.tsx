@@ -24,7 +24,7 @@ export default async function NewExpense({ searchParams }: { searchParams: Promi
   // edit an existing expense (admin)
   let initial: Initial | undefined;
   if (edit && role === "admin") {
-    const { data: d } = await supabase.from("purchase_documents").select("*, supplier:parties(name_ar,vat_number)").eq("id", edit).maybeSingle();
+    const { data: d } = await supabase.from("purchase_documents").select("*, supplier:parties!purchase_documents_supplier_id_fkey(name_ar,vat_number)").eq("id", edit).maybeSingle();
     if (d) {
       const { data: pays } = await supabase.from("supplier_payments").select("id,bank_account_id,advance_id,journal_entry_id").eq("purchase_document_id", edit);
       const { data: accs } = await supabase.from("accounts").select("id,is_bank,system_key").eq("company_id", company.id);

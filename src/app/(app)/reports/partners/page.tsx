@@ -29,7 +29,7 @@ export default async function PartnersReport() {
         const rows = (agreements ?? []).filter((a) => a.partner_id === p.id);
         return (
           <section key={p.id} className="card">
-            <h2>{(lang === "en" && p.name_en) || p.name_ar}</h2>
+            <h2><Link className="link" href={`/partners/${p.id}`}>{(lang === "en" && p.name_en) || p.name_ar}</Link></h2>
             <div className="table-wrap"><table>
               <thead><tr><th>{t.sales.project}</th><th>{t.pp.basis}</th><th className="n">%</th>
                 <th className="n">{t.detail.entitled}</th><th className="n">{t.detail.settled}</th><th className="n">{t.detail.outstanding}</th>

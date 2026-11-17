@@ -15,7 +15,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
 
   const [{ data: docs }, { data: bal }, { data: custodies }, { data: people }, { data: advAll }, { data: projs }] = await Promise.all([
     supabase.from("purchase_documents")
-      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,project:projects(code),supplier:parties(name_ar,name_en)")
+      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,project:projects(code),supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en)")
       .eq("company_id", company.id).order("issue_date", { ascending: false }).order("created_at", { ascending: false }).limit(300),
     supabase.from("v_purchase_balances").select("id,paid,balance").eq("company_id", company.id),
     supabase.from("v_custody").select("id,holder_name,purpose,balance,amount").eq("company_id", company.id).eq("status", "open"),
@@ -62,7 +62,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       </div>
       {sp.ok === "advance" && <p className="alert ok">✓ {t.adv.saved}</p>}
       {sp.err && <p className="alert error">{sp.err}</p>}
-      {sp.ok === "deleted" && <p className="alert ok">✓ {t.exp.deleted}</p>}
+      {(sp.ok === "deleted" || sp.ok === "advDeleted") && <p className="alert ok">✓ {t.exp.deleted}</p>}
 
       {manager && (
         <section className="card stack" id="commitments">
@@ -122,7 +122,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                     </tr>
                     {g.rows.map((a) => (
                       <tr key={a.id}>
-                        <td></td><td className="clip muted">{a.notes}</td><td className="num">{a.pay_date}</td>
+                        <td></td><td className="clip muted"><Link href={`/purchases/advance/${a.id}`}>{a.notes}</Link></td><td className="num">{a.pay_date}</td>
                         <td className="n num">{money(a.amount)}</td><td className="n num">{Number(a.applied) ? money(a.applied) : "—"}</td>
                         <td className="n num">{money(a.balance)}</td>
                       </tr>
@@ -170,7 +170,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                     const a = it.a, open = Number(a.balance) > 0.004;
                     return (
                       <tr key={"a" + a.id} className="adv-row">
-                        <td className="num"><Link className="link" href="/purchases#advances">{a.pay_date}</Link></td>
+                        <td className="num"><Link className="link" href={`/purchases/advance/${a.id}`}>{a.pay_date}</Link></td>
                         <td className="num">{a.project_id ? pcode.get(a.project_id) ?? "—" : "—"}</td>
                         <td>{a.supplier_name}</td>
                         <td className="clip">{a.notes}{" "}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
-import { paySupplier, applyAdvance, payByPartner, linkCommitment, deleteExpense } from "./actions";
+import { paySupplier, applyAdvance, payByPartner, linkCommitment, deleteExpense, deletePayment } from "./actions";
 
 type Params = Promise<{ id: string }>;
 
@@ -16,7 +16,7 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
   const manager = canManage(role);
 
   const { data: d } = await supabase.from("purchase_documents")
-    .select("*, project:projects(id,code,name_ar,name_en), supplier:parties(name_ar,name_en,vat_number)")
+    .select("*, project:projects(id,code,name_ar,name_en), supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en,vat_number)")
     .eq("id", id).eq("company_id", company.id).maybeSingle();
   if (!d) notFound();
   type N = { name_ar: string; name_en: string | null; code?: string; id?: string; vat_number?: string | null };
@@ -57,10 +57,11 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
         </div>
         <div className="actions">
           {role === "admin" && <Link href={`/purchases/new?edit=${id}`} className="btn soft" data-act="edit">{t.exp.edit}</Link>}
+          {role === "admin" && <a href="#delete" className="btn ghost danger">{t.exp.delete}</a>}
           <Link href="/purchases" className="btn ghost">{t.back}</Link>
         </div>
       </div>
-      {sp.ok && <p className="alert ok">✓ {sp.ok === "advance" ? t.adv.appliedOk : sp.ok === "edited" ? t.exp.edited : t.exp.posted}</p>}
+      {sp.ok && <p className="alert ok">✓ {sp.ok === "advance" ? t.adv.appliedOk : sp.ok === "edited" ? t.exp.edited : sp.ok === "paymentDeleted" ? t.exp.paymentDeleted : t.exp.posted}</p>}
       {sp.err && <p className="alert error">{sp.err}</p>}
 
       <div className="grid-2 top">
@@ -103,13 +104,21 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
           )}
           {payRows && payRows.length > 0 && (
             <table className="small">
-              <thead><tr><th colSpan={3}>{t.exp.howPaid}</th></tr></thead>
+              <thead><tr><th colSpan={role === "admin" ? 4 : 3}>{t.exp.howPaid}</th></tr></thead>
               <tbody>
                 {payRows.map((r) => {
                   const a = r.account as unknown as { code: string; name_ar: string; is_bank: boolean; system_key: string | null } | null;
                   const src = r.advance_id ? t.exp.srcAdvance : a?.system_key === "partner_held_cash" ? t.exp.byPartner
                     : a?.system_key === "custody" ? t.nav.custody : a ? `${a.code} · ${a.name_ar}` : "";
-                  return <tr key={r.id}><td className="num">{r.pay_date}</td><td>{src}</td><td className="n num">{money(r.amount)}</td></tr>;
+                  return (
+                    <tr key={r.id}><td className="num">{r.pay_date}</td><td>{src}</td><td className="n num">{money(r.amount)}</td>
+                      {role === "admin" && <td>
+                        <form action={deletePayment} className="inline-form">
+                          <input type="hidden" name="id" value={id} /><input type="hidden" name="payment" value={r.id} />
+                          <input name="reason" required placeholder={t.exp.reason} className="pw-input" />
+                          <button className="btn ghost sm danger" data-act="delete-payment" title={t.exp.deletePayment}>✕</button>
+                        </form></td>}
+                    </tr>);
                 })}
                 {left > 0.004 && <tr><td /><td className="warn-text">{t.exp.balance}</td><td className="n num warn-text">{money(left)}</td></tr>}
               </tbody>
@@ -175,7 +184,7 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
         </section>
       )}
       {role === "admin" && (
-        <details className="card danger-zone">
+        <details className="card danger-zone" id="delete" open>
           <summary>{t.exp.delete}</summary>
           <form action={deleteExpense} className="stack mt">
             <input type="hidden" name="id" value={id} />

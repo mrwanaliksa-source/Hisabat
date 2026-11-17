@@ -149,7 +149,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
               <tbody>
                 {partners.map((p) => (
                   <tr key={`${p.partner_id}-${p.project_id}`}>
-                    <td>{pn.get(p.partner_id)}</td><td className="num">{pc.get(p.project_id)}</td>
+                    <td><Link className="link" href={`/partners/${p.partner_id}`}>{pn.get(p.partner_id)}</Link></td><td className="num">{pc.get(p.project_id)}</td>
                     <td className="n num">{money(p.net_collected)}</td><td className="n num">{money(p.entitled)}</td>
                     <td className="n num">{money(p.settled)}</td><td className="n num"><b>{money(p.outstanding)}</b></td>
                     <td>{Number(p.outstanding) > 0 && (
@@ -173,7 +173,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
                 {held.map((h) => (
                   <tr key={h.project_id}>
                     <td><Link className="link num" href={`/projects/${h.project_id}`}>{h.code}</Link></td>
-                    <td>{pn.get(h.partner_id)}</td>
+                    <td><Link className="link" href={`/partners/${h.partner_id}`}>{pn.get(h.partner_id)}</Link></td>
                     <td className="n num">{money(h.collected_by_partner)}</td><td className="n num">{money(h.transferred_to_company)}</td>
                     <td className="n num">{money(h.partner_vat_due)}</td><td className="n num"><b>{money(h.net_due_to_company)}</b></td>
                     <td><Link className="btn soft sm" href={`/cash/transfer?project=${h.project_id}`}>{t.pp.transfer}</Link></td>

@@ -21,7 +21,7 @@ export default async function CustodyDetail({ params, searchParams }: { params: 
   const [{ data: co }, { data: banks }, { data: settlements }, { data: projects }, { data: suppliers }, { data: req }] = await Promise.all([
     supabase.from("companies").select("custody_approver_1,custody_approver_2").eq("id", company.id).maybeSingle(),
     supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).order("code"),
-    supabase.from("custody_settlements").select("id,kind,amount,created_at,doc:purchase_documents(id,details,issue_date,supplier:parties(name_ar))").eq("custody_id", id).order("created_at"),
+    supabase.from("custody_settlements").select("id,kind,amount,created_at,doc:purchase_documents(id,details,issue_date,supplier:parties!purchase_documents_supplier_id_fkey(name_ar))").eq("custody_id", id).order("created_at"),
     supabase.from("projects").select("id,code,name_ar,name_en").eq("company_id", company.id).neq("status", "closed").order("code"),
     supabase.from("parties").select("name_ar,vat_number").eq("company_id", company.id).eq("kind", "supplier").order("name_ar").limit(500),
     supabase.from("custody_requests").select("approved1_by,approved2_by,project_id").eq("id", id).maybeSingle(),
