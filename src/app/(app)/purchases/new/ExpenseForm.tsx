@@ -7,23 +7,25 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import type { Dict } from "@/lib/i18n";
 
 type Opt = { id: string; name: string; code?: string; group?: string; projectId?: string | null; partner?: string };
-type Adv = { id: string; supplier: string; balance: number; projectId: string | null };
+type Adv = { id: string; supplier: string; balance: number; projectId: string | null; count?: number };
 type Cm = { id: string; supplier: string; title: string; remaining: number; projectId: string | null };
-type Props = { t: Dict; commitments: Cm[]; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[] };
+export type Initial = { id: string; details: string; projectId: string; date: string; supplier: string; vatNo: string; docNumber: string;
+  net: string; noVat: boolean; pay: string; commitmentId: string; custodyLabel?: string };
+type Props = { t: Dict; commitments: Cm[]; initial?: Initial; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[] };
 
 const validVat = (v: string) => /^3\d{13}3$/.test(v.replace(/\D/g, ""));
 
-export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances, commitments }: Props) {
+export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances, commitments, initial }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(createExpense, {});
-  const [supplier, setSupplier] = useState("");
-  const [projectId, setProjectId] = useState(projects.length === 1 ? projects[0].id : "");
-  const [vatNo, setVatNo] = useState("");
-  const [net, setNet] = useState("");
-  const [noVat, setNoVat] = useState(false);
-  const [cmId, setCmId] = useState("");
+  const [supplier, setSupplier] = useState(initial?.supplier ?? "");
+  const [projectId, setProjectId] = useState(initial?.projectId ?? (projects.length === 1 ? projects[0].id : ""));
+  const [vatNo, setVatNo] = useState(initial?.vatNo ?? "");
+  const [net, setNet] = useState(initial?.net ?? "");
+  const [noVat, setNoVat] = useState(initial?.noVat ?? false);
+  const [cmId, setCmId] = useState(initial?.commitmentId ?? "");
   const cm = commitments.find((c) => c.id === cmId) ?? null;
   const defPay = banks[1] ? `account:${banks[1].id}` : banks[0] ? `account:${banks[0].id}` : "credit";
-  const [pay, setPay] = useState(defPay);
+  const [pay, setPay] = useState(initial?.pay ?? defPay);
   const adv = pay.startsWith("advance:") ? advances.find((a) => a.id === pay.slice(8)) ?? null : null;
   const [photo, setPhoto] = useState<{ path: string; hash: string } | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -64,11 +66,19 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
 
   return (
     <form action={action} className="stack-lg narrow-form">
+      {initial && (
+        <fieldset className="card">
+          <legend>{t.exp.editing}</legend>
+          <input type="hidden" name="edit_id" value={initial.id} />
+          <p className="alert warn small">{t.exp.editNote}</p>
+          <label className="field"><span>{t.exp.reason}<b className="req"> *</b></span><input name="reason" required /></label>
+        </fieldset>
+      )}
       <fieldset className="card">
         <legend>{t.exp.details}</legend>
         <label className="field">
           <span>{t.exp.details}<b className="req"> *</b></span>
-          <textarea name="details" required rows={3} placeholder={t.exp.detailsHint} />
+          <textarea name="details" required rows={3} placeholder={t.exp.detailsHint} defaultValue={initial?.details} />
         </label>
         <div className="grid-2">
           <label className="field">
@@ -80,7 +90,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
           </label>
           <label className="field">
             <span>{t.exp.date}<b className="req"> *</b></span>
-            <input type="date" name="issue_date" required defaultValue={new Date().toISOString().slice(0, 10)} />
+            <input type="date" name="issue_date" required defaultValue={initial?.date ?? new Date().toISOString().slice(0, 10)} />
           </label>
           <label className="field">
             <span>{t.exp.supplier}<b className="req"> *</b></span>
@@ -103,7 +113,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
           )}
           <label className="field">
             <span>{t.exp.docNumber}</span>
-            <input name="doc_number" dir="ltr" />
+            <input name="doc_number" dir="ltr" defaultValue={initial?.docNumber} />
           </label>
         </div>
       </fieldset>
@@ -137,6 +147,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
           <select name="pay" value={pay} onChange={(e) => setPay(e.target.value)}>
             {banks.map((b) => <option key={b.id} value={`account:${b.id}`}>{b.name}{b.projectId ? ` — ${t.parts.moneyOf} ${projects.find((p) => p.id === b.projectId)?.code ?? ""}` : ""}</option>)}
             <option value="credit">{t.exp.payCredit}</option>
+            {initial?.pay.startsWith("custody:") && <option value={initial.pay}>{initial.custodyLabel}</option>}
             {projects.some((p) => p.partner !== undefined) && (
               <optgroup label={t.exp.byPartner}>
                 {projects.filter((p) => p.partner !== undefined).map((p) => (
@@ -146,7 +157,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
             )}
             {advances.length > 0 && (
               <optgroup label={t.adv.payFrom}>
-                {advances.map((a) => <option key={a.id} value={`advance:${a.id}`}>{a.supplier} — {t.adv.left} {fmt(a.balance)}</option>)}
+                {advances.map((a) => <option key={a.id} value={`advance:${a.id}`}>{a.supplier} — {a.count && a.count > 1 ? `${a.count} ${t.adv.payments} · ` : ""}{t.adv.left} {fmt(a.balance)}</option>)}
               </optgroup>
             )}
           </select>
@@ -165,9 +176,17 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
         {adv && (
           <p className="alert ok small">
             {t.adv.payFrom}: <b className="num">{fmt(Math.min(total, adv.balance))}</b>
-            {total > adv.balance && <> · {t.exp.payCredit}: <b className="num">{fmt(r2(total - adv.balance))}</b></>}
-            <br /><span className="muted">{t.adv.leftNote}</span>
           </p>
+        )}
+        {adv && total > adv.balance && (
+          <label className="field">
+            <span>{t.adv.restFrom.replace("{amount}", fmt(r2(total - adv.balance)))}</span>
+            <select name="rest_pay" defaultValue="credit">
+              <option value="credit">{t.exp.payCredit}</option>
+              {banks.map((b) => <option key={b.id} value={`account:${b.id}`}>{b.name}{b.projectId ? ` — ${t.parts.moneyOf} ${projects.find((p) => p.id === b.projectId)?.code ?? ""}` : ""}</option>)}
+              {projects.filter((p) => p.partner !== undefined).map((p) => <option key={p.id} value={`partner:${p.id}`}>{t.exp.byPartner}: {p.partner} — {t.parts.moneyOf} {p.code}</option>)}
+            </select>
+          </label>
         )}
         <label className="field">
           <span>{t.exp.photo}</span>
@@ -178,6 +197,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
         {photo && <p className="alert ok">✓</p>}
         <input type="hidden" name="attachment_path" value={photo?.path ?? ""} />
         <input type="hidden" name="file_hash" value={photo?.hash ?? ""} />
+        {adv && <input type="hidden" name="advance_supplier" value={adv.id} />}
       </fieldset>
 
       {state.error && <p className="alert error">{state.error}</p>}

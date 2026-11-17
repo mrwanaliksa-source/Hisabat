@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
-import { paySupplier, applyAdvance, payByPartner, linkCommitment } from "./actions";
+import { paySupplier, applyAdvance, payByPartner, linkCommitment, deleteExpense } from "./actions";
 
 type Params = Promise<{ id: string }>;
 
@@ -31,9 +31,11 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
     manager ? supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).order("code") : Promise.resolve({ data: null }),
     supabase.from("profiles").select("full_name").eq("id", d.created_by ?? "").maybeSingle(),
     d.attachment_path ? supabase.storage.from("attachments").createSignedUrl(d.attachment_path, 600) : Promise.resolve({ data: null }),
-    canApply ? supabase.from("v_supplier_advances").select("id,pay_date,notes,balance").eq("supplier_id", d.supplier_id).gt("balance", 0).order("pay_date")
+    canApply ? supabase.from("v_supplier_advance_pool").select("balance,payments").eq("supplier_id", d.supplier_id)
              : Promise.resolve({ data: null }),
   ]);
+  const { data: payRows } = await supabase.from("supplier_payments")
+    .select("id,pay_date,amount,reference,advance_id,account:accounts(code,name_ar,is_bank,system_key)").eq("purchase_document_id", id).order("pay_date");
   const { data: cms } = canApply
     ? await supabase.from("v_supplier_commitments").select("id,title,total_amount,paid,remaining,closed_at").eq("supplier_id", d.supplier_id)
     : { data: null };
@@ -53,9 +55,12 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
           <h1 className="page-title">{nm(supp)}</h1>
           <p className="muted">{proj ? <Link className="link" href={`/projects/${proj.id}`}>{proj.code} · {nm(proj)}</Link> : t.exp.general} · <span className="num">{d.issue_date}</span></p>
         </div>
-        <Link href="/purchases" className="btn ghost">{t.back}</Link>
+        <div className="actions">
+          {role === "admin" && <Link href={`/purchases/new?edit=${id}`} className="btn soft" data-act="edit">{t.exp.edit}</Link>}
+          <Link href="/purchases" className="btn ghost">{t.back}</Link>
+        </div>
       </div>
-      {sp.ok && <p className="alert ok">✓ {sp.ok === "advance" ? t.adv.appliedOk : t.exp.posted}</p>}
+      {sp.ok && <p className="alert ok">✓ {sp.ok === "advance" ? t.adv.appliedOk : sp.ok === "edited" ? t.exp.edited : t.exp.posted}</p>}
       {sp.err && <p className="alert error">{sp.err}</p>}
 
       <div className="grid-2 top">
@@ -96,16 +101,27 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
               {d.payment_source === "credit" ? t.exp.payCredit : d.payment_source === "custody" ? t.nav.custody : t.exp.paid}
             </span></p>
           )}
-          {canApply && left > 0.004 && advs && advs.length > 0 && (
+          {payRows && payRows.length > 0 && (
+            <table className="small">
+              <thead><tr><th colSpan={3}>{t.exp.howPaid}</th></tr></thead>
+              <tbody>
+                {payRows.map((r) => {
+                  const a = r.account as unknown as { code: string; name_ar: string; is_bank: boolean; system_key: string | null } | null;
+                  const src = r.advance_id ? t.exp.srcAdvance : a?.system_key === "partner_held_cash" ? t.exp.byPartner
+                    : a?.system_key === "custody" ? t.nav.custody : a ? `${a.code} · ${a.name_ar}` : "";
+                  return <tr key={r.id}><td className="num">{r.pay_date}</td><td>{src}</td><td className="n num">{money(r.amount)}</td></tr>;
+                })}
+                {left > 0.004 && <tr><td /><td className="warn-text">{t.exp.balance}</td><td className="n num warn-text">{money(left)}</td></tr>}
+              </tbody>
+            </table>
+          )}
+          {canApply && left > 0.004 && advs && advs.length > 0 && Number(advs[0].balance) > 0.004 && (
             <form action={applyAdvance} className="stack apply-adv">
               <h3>{t.adv.applyTitle}</h3>
+              <p className="small">{t.adv.poolIs} <b className="num">{money(advs[0].balance)}</b> ({advs[0].payments} {t.adv.payments})</p>
               <input type="hidden" name="id" value={id} />
-              <div className="grid-2">
-                <label className="field"><span>{t.adv.choose}</span>
-                  <select name="advance">{advs.map((a) => <option key={a.id} value={a.id}>{a.pay_date} · {a.notes} — {t.adv.left} {money(a.balance)}</option>)}</select></label>
-                <label className="field"><span>{t.cash.payAmount}</span>
-                  <input name="amount" inputMode="decimal" dir="ltr" defaultValue={Math.min(left, Number(advs[0].balance))} /></label>
-              </div>
+              <label className="field"><span>{t.cash.payAmount}</span>
+                <input name="amount" inputMode="decimal" dir="ltr" defaultValue={Math.min(left, Number(advs[0].balance))} /></label>
               <button className="btn soft" data-act="apply-advance">{t.adv.apply}</button>
             </form>
           )}
@@ -157,6 +173,18 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
             </tbody>
           </table>
         </section>
+      )}
+      {role === "admin" && (
+        <details className="card danger-zone">
+          <summary>{t.exp.delete}</summary>
+          <form action={deleteExpense} className="stack mt">
+            <input type="hidden" name="id" value={id} />
+            <p className="muted small">{t.exp.deleteNote}</p>
+            <label className="field"><span>{t.exp.reason}<b className="req"> *</b></span><input name="reason" required /></label>
+            <label className="check"><input type="checkbox" name="confirm" value="1" required /> {t.exp.deleteConfirm}</label>
+            <button className="btn danger self-start" data-act="delete">{t.exp.delete}</button>
+          </form>
+        </details>
       )}
     </div>
   );

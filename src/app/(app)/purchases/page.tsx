@@ -62,6 +62,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       </div>
       {sp.ok === "advance" && <p className="alert ok">✓ {t.adv.saved}</p>}
       {sp.err && <p className="alert error">{sp.err}</p>}
+      {sp.ok === "deleted" && <p className="alert ok">✓ {t.exp.deleted}</p>}
 
       {manager && (
         <section className="card stack" id="commitments">

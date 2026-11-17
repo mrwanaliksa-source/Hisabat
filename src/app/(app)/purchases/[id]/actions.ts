@@ -18,9 +18,8 @@ export async function paySupplier(fd: FormData) {
 export async function applyAdvance(fd: FormData) {
   const { supabase } = await getContext();
   const id = String(fd.get("id"));
-  const { error } = await supabase.rpc("apply_supplier_advance", {
-    p_doc: id, p_advance: String(fd.get("advance")), p_amount: toNum(fd.get("amount")),
-    p_date: new Date().toISOString().slice(0, 10),
+  const { error } = await supabase.rpc("apply_supplier_advances", {
+    p_doc: id, p_amount: toNum(fd.get("amount")), p_date: new Date().toISOString().slice(0, 10),
   });
   revalidatePath(`/purchases/${id}`); revalidatePath("/purchases"); revalidatePath("/");
   redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=advance"}`);
@@ -47,4 +46,13 @@ export async function linkCommitment(fd: FormData) {
   const { error } = await supabase.rpc("link_to_commitment", { p_doc: id, p_commitment: String(fd.get("commitment") || "") || null });
   revalidatePath(`/purchases/${id}`); revalidatePath("/purchases");
   redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : ""}`);
+}
+
+export async function deleteExpense(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = String(fd.get("id"));
+  const { error } = await supabase.rpc("delete_purchase", { p_doc: id, p_reason: String(fd.get("reason") ?? "") });
+  if (error) redirect(`/purchases/${id}?err=${encodeURIComponent(error.message)}`);
+  revalidatePath("/purchases"); revalidatePath("/"); revalidatePath("/cash");
+  redirect("/purchases?ok=deleted");
 }

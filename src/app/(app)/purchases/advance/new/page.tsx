@@ -13,8 +13,8 @@ export default async function NewAdvance({ searchParams }: { searchParams: Promi
   if (!["admin", "reviewer", "expense"].includes(role ?? "")) redirect("/");
 
   const [{ data: projects }, { data: banks }, { data: suppliers }] = await Promise.all([
-    supabase.from("projects").select("id,code,name_ar,name_en").eq("company_id", company.id).neq("status", "closed").order("code"),
-    supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).eq("is_active", true).order("code"),
+    supabase.from("projects").select("id,code,name_ar,name_en,group_id").eq("company_id", company.id).neq("status", "closed").order("code"),
+    supabase.from("accounts").select("id,code,name_ar,name_en,project_id").eq("company_id", company.id).eq("is_bank", true).eq("is_active", true).order("code"),
     supabase.from("parties").select("name_ar").eq("company_id", company.id).eq("kind", "supplier").order("name_ar").limit(500),
   ]);
   const label = (x: { name_ar: string; name_en: string | null }) => (lang === "en" && x.name_en) || x.name_ar;
@@ -42,7 +42,8 @@ export default async function NewAdvance({ searchParams }: { searchParams: Promi
           <label className="field"><span>{t.exp.date}<b className="req"> *</b></span>
             <input type="date" name="pay_date" required defaultValue={new Date().toISOString().slice(0, 10)} /></label>
           <label className="field"><span>{t.adv.paidFrom}</span>
-            <select name="account_id">{(banks ?? []).map((b) => <option key={b.id} value={b.id}>{b.code} · {label(b)}</option>)}</select></label>
+            <select name="account_id">{(banks ?? []).map((b) => <option key={b.id} value={b.id}>{b.code} · {label(b)}{b.project_id ? ` — ${t.parts.moneyOf} ${(projects ?? []).find((p) => p.id === b.project_id)?.code ?? ""}` : ""}</option>)}</select>
+            <small className="muted">{t.adv.loanHint}</small></label>
           <label className="field"><span>{t.cash.reference}</span><input name="reference" dir="ltr" /></label>
         </div>
         <label className="field"><span>{t.adv.notes}<b className="req"> *</b></span>
