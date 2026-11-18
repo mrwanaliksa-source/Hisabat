@@ -16,7 +16,7 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
   const manager = canManage(role);
 
   const { data: d } = await supabase.from("purchase_documents")
-    .select("*, project:projects(id,code,name_ar,name_en), supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en,vat_number)")
+    .select("*, project:projects!purchase_documents_project_id_fkey(id,code,name_ar,name_en), supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en,vat_number)")
     .eq("id", id).eq("company_id", company.id).maybeSingle();
   if (!d) notFound();
   type N = { name_ar: string; name_en: string | null; code?: string; id?: string; vat_number?: string | null };

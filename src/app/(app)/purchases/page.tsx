@@ -15,7 +15,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
 
   const [{ data: docs }, { data: bal }, { data: custodies }, { data: people }, { data: advAll }, { data: projs }] = await Promise.all([
     supabase.from("purchase_documents")
-      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,project:projects(code),supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en)")
+      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,project:projects!purchase_documents_project_id_fkey(code),supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en)")
       .eq("company_id", company.id).order("issue_date", { ascending: false }).order("created_at", { ascending: false }).limit(300),
     supabase.from("v_purchase_balances").select("id,paid,balance").eq("company_id", company.id),
     supabase.from("v_custody").select("id,holder_name,purpose,balance,amount").eq("company_id", company.id).eq("status", "open"),

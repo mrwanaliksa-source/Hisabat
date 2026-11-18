@@ -60,7 +60,11 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
     <div className="stack-lg">
       <div className="page-head">
         <h1 className="page-title">{t.cash.title}</h1>
-        <Link href="/cash/receipt/new" className="btn primary"><Icon name="in" /> {t.cash.newReceipt}</Link>
+        <div className="actions">
+          <Link href="/cash/external" className="btn soft">{t.ext.btn}</Link>
+          <Link href="/cash/move" className="btn soft">{t.mv.btn}</Link>
+          <Link href="/cash/receipt/new" className="btn primary"><Icon name="in" /> {t.cash.newReceipt}</Link>
+        </div>
       </div>
       {sp.ok && <p className="alert ok">✓</p>}
       {sp.err && <p className="alert error">{sp.err}</p>}
