@@ -169,6 +169,10 @@ const ar = {
          loan_out: "رجّعت جزء أو كل سلفة — بتقلل الدين اللي عليك للشخص ده." },
     toAcc: "دخلت في", fromAcc: "طلعت من", who: "اسم الشخص / الجهة", loans: "سلف علينا لسه", borrowed: "اتسلفنا", repaid: "رجّعنا", owed: "الباقي علينا",
   },
+  sup: {
+    title: "الموردين", btn: "الموردين", name: "اسم المورد", vat: "الرقم الضريبي", invoices: "فواتير", total: "إجمالي الفواتير",
+    search: "دوّر بالاسم أو الرقم الضريبي", hint: "صحّح اسم المورد أو رقمه الضريبي من هنا. الرقم الضريبي لازم يكون لمورد واحد بس — لو رقم اتسجل على مورد غلط، امسحه من عنده واحفظ. وبعدين افتح أي فاتورة اتسجلت على مورد غلط ← تعديل المصروف ← اكتب المورد الصح.",
+  },
   co: {
     choose: "اختار الشركة", chooseHint: "حسابك له صلاحية على أكتر من شركة. اختار هتشتغل على أنهي واحدة؛ وتقدر تبدّل من فوق في أي وقت.",
     noAccess: "مالكش صلاحية على الشركة دي.", switch: "تبديل الشركة", enter: "دخول",
@@ -204,7 +208,7 @@ const ar = {
     totalsMismatch: "قبل الضريبة + الضريبة لا يساوي الإجمالي", save: "حفظ المصروف", saving: "جارٍ الحفظ…",
     by: "أدخله", paid: "مدفوع", balance: "متبقي للمورد", payNow: "سداد للمورد", custodyRow: "عهدة على",
     openCustodies: "عهد مفتوحة", posted: "تم تسجيل المصروف", addVat: "احسب 15%", uploading: "جارٍ رفع الصورة…",
-    viewPhoto: "عرض الصورة", byPartner: "دفعها الشريك", byPartnerFrom: "من فلوس المشروع اللي مع", ofWhichAdv: "منها دفعة منتظرة فاتورة", edit: "تعديل المصروف", howPaid: "اتدفعت إزاي", deletePayment: "حذف السداد ده", paymentDeleted: "تم حذف السداد", srcAdvance: "من دفعات المورد بدون فاتورة", editing: "تعديل مصروف متسجل", reason: "السبب", edited: "تم تعديل المصروف", deleted: "تم حذف المصروف", delete: "حذف المصروف", deleteConfirm: "متأكد — احذف المصروف وكل اللي اترتب عليه", deleteNote: "بيتشال المصروف وقيوده وسداده (بنك، عهدة، شريك، دفعة مقدمة) والسلفة بين الأجزاء لو فيه. البنك والعهدة والدفعات بترجع زي ما كانت، والسبب بيتسجل في سجل التدقيق.", editNote: "الحفظ هيلغي المصروف القديم وسداده ويسجله من جديد بالبيانات وطريقة الدفع اللي هنا. البنك والعهدة والدفعات بيتظبطوا لوحدهم.", ofWhichCus: "منها عهدة لم تُصفَّ", partnerReclaims: "الشريك هيسترجع ضريبة الفاتورة دي في إقراره (الضريبة مش هتتحسب تكلفة)", noVat: "بدون ضريبة", vatAuto: "تحسب تلقائيًا 15%",
+    viewPhoto: "عرض الصورة", byPartner: "دفعها الشريك", byPartnerFrom: "من فلوس المشروع اللي مع", ofWhichAdv: "منها دفعة منتظرة فاتورة", edit: "تعديل المصروف", howPaid: "اتدفعت إزاي", supplierLocked: "المورد ده جاي من دفعاته أو التزامه اللي اخترته. لو هتكتب مورد تاني، الاختيار ده هيتلغي.", deletePayment: "حذف السداد ده", paymentDeleted: "تم حذف السداد", srcAdvance: "من دفعات المورد بدون فاتورة", editing: "تعديل مصروف متسجل", reason: "السبب", edited: "تم تعديل المصروف", deleted: "تم حذف المصروف", delete: "حذف المصروف", deleteConfirm: "متأكد — احذف المصروف وكل اللي اترتب عليه", deleteNote: "بيتشال المصروف وقيوده وسداده (بنك، عهدة، شريك، دفعة مقدمة) والسلفة بين الأجزاء لو فيه. البنك والعهدة والدفعات بترجع زي ما كانت، والسبب بيتسجل في سجل التدقيق.", editNote: "الحفظ هيلغي المصروف القديم وسداده ويسجله من جديد بالبيانات وطريقة الدفع اللي هنا. البنك والعهدة والدفعات بيتظبطوا لوحدهم.", ofWhichCus: "منها عهدة لم تُصفَّ", partnerReclaims: "الشريك هيسترجع ضريبة الفاتورة دي في إقراره (الضريبة مش هتتحسب تكلفة)", noVat: "بدون ضريبة", vatAuto: "تحسب تلقائيًا 15%",
   },
   cus: {
     title: "العهد", request: "طلب عهدة", none: "لا توجد عهد.", amount: "المبلغ المطلوب", purpose: "الغرض من العهدة",
@@ -427,6 +431,10 @@ const en: Dict = {
          loan_out: "You returned part or all of a loan — reduces what you owe that person." },
     toAcc: "Into", fromAcc: "Out of", who: "Person / entity", loans: "Loans we still owe", borrowed: "Borrowed", repaid: "Repaid", owed: "Still owed",
   },
+  sup: {
+    title: "Suppliers", btn: "Suppliers", name: "Supplier name", vat: "VAT number", invoices: "Invoices", total: "Invoices total",
+    search: "Search by name or VAT number", hint: "Fix a supplier's name or VAT number here. A VAT number belongs to one supplier only — if it was saved on the wrong one, clear it there and save. Then open any invoice recorded under the wrong supplier → Edit expense → type the right supplier.",
+  },
   co: {
     choose: "Choose a company", chooseHint: "Your account can access more than one company. Pick one to work in; you can switch at the top any time.",
     noAccess: "You don't have access to this company.", switch: "Switch company", enter: "Enter",
@@ -462,7 +470,7 @@ const en: Dict = {
     totalsMismatch: "Amount + VAT does not equal the total", save: "Save expense", saving: "Saving…",
     by: "Entered by", paid: "Paid", balance: "Owed to supplier", payNow: "Pay supplier", custodyRow: "Custody held by",
     openCustodies: "Open custodies", posted: "Expense recorded", addVat: "Add 15%", uploading: "Uploading photo…",
-    viewPhoto: "View photo", byPartner: "Paid by the partner", byPartnerFrom: "From the project money held by", ofWhichAdv: "incl. payments awaiting invoice", edit: "Edit expense", howPaid: "How it was paid", deletePayment: "Delete this payment", paymentDeleted: "Payment deleted", srcAdvance: "From the supplier's payments without invoice", editing: "Editing a recorded expense", reason: "Reason", edited: "Expense updated", deleted: "Expense deleted", delete: "Delete expense", deleteConfirm: "I am sure — delete the expense and everything it caused", deleteNote: "Removes the expense, its entries, its payment (bank, custody, partner, advance) and any loan between parts. Balances return to what they were; the reason is kept in the audit log.", editNote: "Saving cancels the old expense and its payment and records it again with the data and payment method here. Balances adjust automatically.", ofWhichCus: "incl. custody not yet settled", partnerReclaims: "The partner reclaims this invoice's VAT in its return (VAT is not a cost)", noVat: "No VAT", vatAuto: "Calculated automatically at 15%",
+    viewPhoto: "View photo", byPartner: "Paid by the partner", byPartnerFrom: "From the project money held by", ofWhichAdv: "incl. payments awaiting invoice", edit: "Edit expense", howPaid: "How it was paid", supplierLocked: "This supplier comes from the advances or commitment you picked. Typing another supplier clears that choice.", deletePayment: "Delete this payment", paymentDeleted: "Payment deleted", srcAdvance: "From the supplier's payments without invoice", editing: "Editing a recorded expense", reason: "Reason", edited: "Expense updated", deleted: "Expense deleted", delete: "Delete expense", deleteConfirm: "I am sure — delete the expense and everything it caused", deleteNote: "Removes the expense, its entries, its payment (bank, custody, partner, advance) and any loan between parts. Balances return to what they were; the reason is kept in the audit log.", editNote: "Saving cancels the old expense and its payment and records it again with the data and payment method here. Balances adjust automatically.", ofWhichCus: "incl. custody not yet settled", partnerReclaims: "The partner reclaims this invoice's VAT in its return (VAT is not a cost)", noVat: "No VAT", vatAuto: "Calculated automatically at 15%",
   },
   cus: {
     title: "Custody", request: "Request custody", none: "No custody yet.", amount: "Amount requested", purpose: "Purpose",

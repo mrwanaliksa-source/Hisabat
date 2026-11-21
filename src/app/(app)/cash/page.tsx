@@ -94,7 +94,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
                     <td className="n num"><span className={r.reversed_at ? "struck" : ""}>{money(r.amount)}</span></td>
                     <td className="n num">{money(r.allocated)}</td>
                     <td className="n num">{Number(r.unallocated) > 0 ? <b className="warn-text">{money(r.unallocated)}</b> : money(0)}</td>
-                    <td className="actions">
+                    <td><div className="actions">
                       {!r.reversed_at && Number(r.unallocated) > 0 && (
                         <Link className="btn soft sm" href={`/cash/receipt/new?receipt=${r.id}`}>{t.cash.allocateRest}</Link>
                       )}
@@ -109,7 +109,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
                           </form>
                         </details>
                       )}
-                    </td>
+                    </div></td>
                   </tr>
                 ))}
               </tbody>

@@ -38,7 +38,7 @@ export default async function ReviewPage() {
                       <td className="num">{d.issue_date}</td>
                       <td className="n num">{money(d.work_value)}</td>
                       <td><span className={`chip ds-${d.status}`}>{t.docStatus[d.status as keyof typeof t.docStatus]}</span></td>
-                      <td className="actions">
+                      <td><div className="actions">
                         <Link className="btn ghost sm" href={`/sales/${d.id}`}>{t.review.open}</Link>
                         {manager && d.status === "submitted" && (
                           <form action={docAction}>
@@ -46,7 +46,7 @@ export default async function ReviewPage() {
                             <button className="btn primary sm" data-act="approve">{t.sales.approve}</button>
                           </form>
                         )}
-                      </td>
+                      </div></td>
                     </tr>
                   );
                 })}

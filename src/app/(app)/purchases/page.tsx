@@ -5,7 +5,7 @@ import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
 import { Icon } from "@/components/Icon";
 
-export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ unpaid?: string; ok?: string; err?: string }> }) {
+export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ unpaid?: string; ok?: string; err?: string; supplier?: string }> }) {
   const sp = await searchParams;
   const lang = await getLang();
   const t = dict(lang);
@@ -15,7 +15,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
 
   const [{ data: docs }, { data: bal }, { data: custodies }, { data: people }, { data: advAll }, { data: projs }] = await Promise.all([
     supabase.from("purchase_documents")
-      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,project:projects!purchase_documents_project_id_fkey(code),supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en)")
+      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,supplier_id,project:projects!purchase_documents_project_id_fkey(code),supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en)")
       .eq("company_id", company.id).order("issue_date", { ascending: false }).order("created_at", { ascending: false }).limit(300),
     supabase.from("v_purchase_balances").select("id,paid,balance").eq("company_id", company.id),
     supabase.from("v_custody").select("id,holder_name,purpose,balance,amount").eq("company_id", company.id).eq("status", "open"),
@@ -43,11 +43,12 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
   const who = new Map((people ?? []).map((p) => [p.id, p.full_name]));
   let rows = docs ?? [];
   if (sp.unpaid) rows = rows.filter((d) => Number(b.get(d.id)?.balance ?? 0) > 0.004);
+  if (sp.supplier) rows = rows.filter((d) => (d as unknown as { supplier_id?: string }).supplier_id === sp.supplier);
   // invoices and payments-without-invoice in one list, newest first
   type Item = { k: "doc"; date: string; d: (typeof rows)[number] } | { k: "adv"; date: string; a: Adv & { project_id: string | null } };
   const items: Item[] = [
     ...rows.map((d) => ({ k: "doc" as const, date: d.issue_date as string, d })),
-    ...((sp.unpaid ? advs : advAll ?? []) as (Adv & { project_id: string | null })[]).map((a) => ({ k: "adv" as const, date: a.pay_date, a })),
+    ...((sp.unpaid ? advs : advAll ?? []) as (Adv & { project_id: string | null })[]).filter((a) => !sp.supplier || a.supplier_id === sp.supplier).map((a) => ({ k: "adv" as const, date: a.pay_date, a })),
   ].sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0));
   type S = { name_ar: string; name_en: string | null } | null;
 
@@ -56,6 +57,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       <div className="page-head">
         <h1 className="page-title">{t.exp.title}</h1>
         <div className="actions">
+          {manager && <Link href="/purchases/suppliers" className="btn ghost">{t.sup.btn}</Link>}
           <Link href="/purchases/advance/new" className="btn soft">{t.adv.new}</Link>
           <Link href="/purchases/new" className="btn primary"><Icon name="camera" /> {t.exp.new}</Link>
         </div>

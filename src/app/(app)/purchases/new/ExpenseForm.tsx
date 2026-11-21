@@ -38,6 +38,9 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
 
   function onSupplier(v: string) {
     setSupplier(v);
+    // another supplier → it can't be paid from this supplier's advances / commitment
+    if (adv && v.trim() !== adv.supplier) setPay(defPay);
+    if (cm && v.trim() !== cm.supplier) setCmId("");
     const hit = suppliers.find((s) => s.name === v);
     if (hit?.vat && !vatNo) setVatNo(hit.vat);
   }
@@ -94,7 +97,8 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
           </label>
           <label className="field">
             <span>{t.exp.supplier}<b className="req"> *</b></span>
-            <input name="supplier_name" required list="suppliers" value={adv ? adv.supplier : cm ? cm.supplier : supplier} readOnly={!!adv || !!cm} className={adv || cm ? "computed" : undefined} onChange={(e) => onSupplier(e.target.value)} />
+            <input name="supplier_name" required list="suppliers" value={supplier} onChange={(e) => onSupplier(e.target.value)} />
+            {(adv || cm) && <small className="muted">{t.exp.supplierLocked}</small>}
             <datalist id="suppliers">{suppliers.map((s) => <option key={s.name} value={s.name} />)}</datalist>
           </label>
           <label className="field">
@@ -104,7 +108,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
           {commitments.length > 0 && (
             <label className="field">
               <span>{t.cm.on}</span>
-              <select name="commitment_id" value={cmId} onChange={(e) => { setCmId(e.target.value); const c = commitments.find((x) => x.id === e.target.value); if (c?.projectId) setProjectId(c.projectId); }}>
+              <select name="commitment_id" value={cmId} onChange={(e) => { setCmId(e.target.value); const c = commitments.find((x) => x.id === e.target.value); if (c) setSupplier(c.supplier); if (c?.projectId) setProjectId(c.projectId); }}>
                 <option value="">{t.cm.noneOpt}</option>
                 {commitments.map((c) => <option key={c.id} value={c.id}>{c.supplier} — {c.title} — {t.cm.remaining} {fmt(c.remaining)}</option>)}
               </select>
@@ -144,7 +148,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
         <legend>{t.exp.payment}</legend>
         <label className="field">
           <span>{t.exp.payAccount}</span>
-          <select name="pay" value={pay} onChange={(e) => setPay(e.target.value)}>
+          <select name="pay" value={pay} onChange={(e) => { setPay(e.target.value); const a = advances.find((x) => `advance:${x.id}` === e.target.value); if (a) setSupplier(a.supplier); }}>
             {banks.map((b) => <option key={b.id} value={`account:${b.id}`}>{b.name}{b.projectId ? ` — ${t.parts.moneyOf} ${projects.find((p) => p.id === b.projectId)?.code ?? ""}` : ""}</option>)}
             <option value="credit">{t.exp.payCredit}</option>
             {initial?.pay.startsWith("custody:") && <option value={initial.pay}>{initial.custodyLabel}</option>}
