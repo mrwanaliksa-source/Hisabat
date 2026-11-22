@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
-import { paySupplier, applyAdvance, payByPartner, linkCommitment, deleteExpense, deletePayment } from "./actions";
+import { paySupplier, applyAdvance, payByPartner, linkCommitment, deleteExpense, deletePayment, payExternal } from "./actions";
 
 type Params = Promise<{ id: string }>;
 
@@ -109,7 +109,8 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
                 {payRows.map((r) => {
                   const a = r.account as unknown as { code: string; name_ar: string; is_bank: boolean; system_key: string | null } | null;
                   const src = r.advance_id ? t.exp.srcAdvance : a?.system_key === "partner_held_cash" ? t.exp.byPartner
-                    : a?.system_key === "custody" ? t.nav.custody : a ? `${a.code} · ${a.name_ar}` : "";
+                    : a?.system_key === "custody" ? t.nav.custody
+                    : a && ["loans_payable", "equity"].includes(a.system_key ?? "") ? (r.reference ?? t.exp.extOpt) : a ? `${a.code} · ${a.name_ar}` : "";
                   return (
                     <tr key={r.id}><td className="num">{r.pay_date}</td><td>{src}</td><td className="n num">{money(r.amount)}</td>
                       {role === "admin" && <td>
@@ -150,6 +151,19 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
                 <label className="check"><input type="checkbox" name="reclaim" value="1" defaultChecked /> {t.exp.partnerReclaims}</label>
               )}
               <button className="btn soft" data-act="pay-partner">{t.exp.byPartner}</button>
+            </form>
+          )}
+          {manager && left > 0.004 && (
+            <form action={payExternal} className="stack apply-adv">
+              <h3>{t.exp.extPay}</h3>
+              <input type="hidden" name="id" value={id} />
+              <div className="grid-2">
+                <label className="field"><span>{t.exp.extWho}</span><input name="who" required placeholder={t.exp.extWhoPh} /></label>
+                <label className="field"><span>{t.cash.payAmount}</span><input name="amount" inputMode="decimal" dir="ltr" defaultValue={left} /></label>
+                <label className="field"><span>{t.cash.date}</span><input type="date" name="date" defaultValue={new Date().toISOString().slice(0, 10)} /></label>
+              </div>
+              <label className="check"><input type="checkbox" name="loan" value="1" defaultChecked /> {t.exp.extLoan}</label>
+              <button className="btn soft" data-act="pay-external">{t.exp.extPay}</button>
             </form>
           )}
           {manager && left > 0.004 && (

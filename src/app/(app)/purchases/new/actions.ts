@@ -27,14 +27,16 @@ export async function createExpense(_prev: FormState, fd: FormData): Promise<For
     vat_amount: String(toNum(fd.get("vat_amount"))),
     total_amount: String(toNum(fd.get("total_amount"))),
     details: str(fd.get("details")),
-    payment: pay === "credit" ? "credit" : "account",
+    payment: pay === "credit" ? "credit" : pay === "external" ? "external" : "account",
+    ext_who: pay === "external" ? str(fd.get("ext_who")) : "",
+    ext_loan: fd.get("ext_loan") === "1",
     account_id: pay.startsWith("account:") ? pay.slice(8) : "",
     attachment_path: str(fd.get("attachment_path")),
     file_hash: str(fd.get("file_hash")),
   };
   const editId = str(fd.get("edit_id"));
   if (editId) {
-    const mode = pay.startsWith("partner:") ? "partner" : pay.startsWith("advance:") ? "advance" : pay.startsWith("custody:") ? "custody" : pay === "credit" ? "credit" : "account";
+    const mode = pay.startsWith("partner:") ? "partner" : pay.startsWith("advance:") ? "advance" : pay.startsWith("custody:") ? "custody" : pay === "credit" ? "credit" : pay === "external" ? "external" : "account";
     const { data: newId, error: e2 } = await supabase.rpc("replace_expense", {
       p_doc: editId, p_company: company.id,
       p: { ...payload, mode, reason: str(fd.get("reason")), commitment_id: str(fd.get("commitment_id")),

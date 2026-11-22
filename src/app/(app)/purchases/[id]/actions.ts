@@ -64,3 +64,14 @@ export async function deletePayment(fd: FormData) {
   revalidatePath(`/purchases/${id}`); revalidatePath("/purchases"); revalidatePath("/"); revalidatePath("/cash");
   redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=paymentDeleted"}`);
 }
+
+export async function payExternal(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = String(fd.get("id"));
+  const { error } = await supabase.rpc("pay_purchase_external", {
+    p_doc: id, p_amount: toNum(fd.get("amount")), p_date: String(fd.get("date") || new Date().toISOString().slice(0, 10)),
+    p_who: String(fd.get("who") ?? ""), p_loan: fd.get("loan") === "1",
+  });
+  revalidatePath(`/purchases/${id}`); revalidatePath("/purchases"); revalidatePath("/"); revalidatePath("/cash/external");
+  redirect(`/purchases/${id}${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=paid"}`);
+}

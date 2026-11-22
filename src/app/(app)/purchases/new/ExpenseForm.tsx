@@ -10,12 +10,13 @@ type Opt = { id: string; name: string; code?: string; group?: string; projectId?
 type Adv = { id: string; supplier: string; balance: number; projectId: string | null; count?: number };
 type Cm = { id: string; supplier: string; title: string; remaining: number; projectId: string | null };
 export type Initial = { id: string; details: string; projectId: string; date: string; supplier: string; vatNo: string; docNumber: string;
-  net: string; noVat: boolean; pay: string; commitmentId: string; custodyLabel?: string };
-type Props = { t: Dict; commitments: Cm[]; initial?: Initial; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[] };
+  net: string; noVat: boolean; pay: string; commitmentId: string; custodyLabel?: string; extWho?: string; extLoan?: boolean };
+type Props = { t: Dict; commitments: Cm[]; initial?: Initial; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[]; payers?: string[] };
 
 const validVat = (v: string) => /^3\d{13}3$/.test(v.replace(/\D/g, ""));
 
-export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances, commitments, initial }: Props) {
+export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances, commitments, initial, payers = [] }: Props) {
+  const [extLoan, setExtLoan] = useState(initial?.extLoan ?? true);
   const [state, action, pending] = useActionState<FormState, FormData>(createExpense, {});
   const [supplier, setSupplier] = useState(initial?.supplier ?? "");
   const [projectId, setProjectId] = useState(initial?.projectId ?? (projects.length === 1 ? projects[0].id : ""));
@@ -151,6 +152,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
           <select name="pay" value={pay} onChange={(e) => { setPay(e.target.value); const a = advances.find((x) => `advance:${x.id}` === e.target.value); if (a) setSupplier(a.supplier); }}>
             {banks.map((b) => <option key={b.id} value={`account:${b.id}`}>{b.name}{b.projectId ? ` — ${t.parts.moneyOf} ${projects.find((p) => p.id === b.projectId)?.code ?? ""}` : ""}</option>)}
             <option value="credit">{t.exp.payCredit}</option>
+            <option value="external">{t.exp.extOpt}</option>
             {initial?.pay.startsWith("custody:") && <option value={initial.pay}>{initial.custodyLabel}</option>}
             {projects.some((p) => p.partner !== undefined) && (
               <optgroup label={t.exp.byPartner}>
@@ -166,6 +168,16 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
             )}
           </select>
         </label>
+        {pay === "external" && (
+          <div className="stack">
+            <label className="field"><span>{t.exp.extWho}</span>
+              <input name="ext_who" required list="payers" placeholder={t.exp.extWhoPh} defaultValue={initial?.extWho ?? ""} />
+              <datalist id="payers">{payers.map((n) => <option key={n} value={n} />)}</datalist>
+            </label>
+            <label className="check"><input type="checkbox" name="ext_loan" value="1" checked={extLoan} onChange={(e) => setExtLoan(e.target.checked)} /> {t.exp.extLoan}</label>
+            <p className="muted small">{extLoan ? t.exp.extHintLoan : t.exp.extHintGift}</p>
+          </div>
+        )}
         {pay.startsWith("partner:") && vat > 0 && (
           <label className="check"><input type="checkbox" name="partner_reclaims_vat" value="1" defaultChecked /> {t.exp.partnerReclaims}</label>
         )}

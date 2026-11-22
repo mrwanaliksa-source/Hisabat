@@ -167,7 +167,7 @@ const ar = {
          income: "دخل مش من عميل (بيع خردة، عمولة…) — بيتسجل إيراد، ولو اخترت مشروع بيدخل في ربحه.",
          owner_out: "فلوس خدها المالك من الشركة — بتقلل رأس المال، مش مصروف.",
          loan_out: "رجّعت جزء أو كل سلفة — بتقلل الدين اللي عليك للشخص ده." },
-    toAcc: "دخلت في", fromAcc: "طلعت من", who: "اسم الشخص / الجهة", loans: "سلف علينا لسه", borrowed: "اتسلفنا", repaid: "رجّعنا", owed: "الباقي علينا",
+    direct: "دفع مباشر لمورد", toAcc: "دخلت في", fromAcc: "طلعت من", who: "اسم الشخص / الجهة", loans: "سلف علينا لسه", borrowed: "اتسلفنا", repaid: "رجّعنا", owed: "الباقي علينا",
   },
   sup: {
     title: "الموردين", btn: "الموردين", name: "اسم المورد", vat: "الرقم الضريبي", invoices: "فواتير", total: "إجمالي الفواتير",
@@ -199,6 +199,9 @@ const ar = {
     saved: "تم تسجيل الدفعة المقدمة", restFrom: "الباقي ({amount}) يتدفع من", usedOn: "اتخصمت من فواتير", notUsed: "لسه ما اتخصمتش من أي فاتورة.", delete: "حذف الدفعة", deleteNote: "بتتشال الدفعة وقيدها والسلفة بين الأجزاء لو فيه، والفلوس بترجع للبنك. لو اتخصم منها على فواتير، احذف الخصم من صفحة الفاتورة الأول.", payments: "دفعات", poolIs: "رصيد دفعات المورد ده بدون فواتير:", loanHint: "لو البنك فلوس جزء تاني غير المشروع اللي فوق (زي فلوس كرم على شغل الفاتح)، بتتسجل سلفة بين الجزءين أوتوماتيك.", appliedOk: "تم الخصم من الدفعة المقدمة",
   },
   exp: {
+    extOpt: "من مصدر خارجي (حد من برا)", extWho: "مين اللي دفع", extWhoPh: "اكتب الاسم", extLoan: "تتحسب سلفة على الشركة (هنرجعهاله)",
+    extHintLoan: "هيتسجل دين على الشركة باسمه ويظهر في «سلف علينا» لحد ما تسدده. البنك مش هيتأثر.",
+    extHintGift: "هيتسجل تمويل مش هيترد (رأس مال) — مش دين ومش إيراد. البنك مش هيتأثر.", extPay: "دفع من مصدر خارجي",
     title: "المصروفات", new: "مصروف جديد", none: "لا توجد مصروفات بعد.", project: "المشروع", general: "مصروف عام (بدون مشروع)",
     supplier: "المورد / الجهة", supplierVat: "الرقم الضريبي للمورد (إن وجد)", docNumber: "رقم الفاتورة (إن وجد)",
     date: "التاريخ", net: "المبلغ قبل الضريبة", vat: "الضريبة", total: "الإجمالي المدفوع", details: "تفاصيل المصروف",
@@ -422,7 +425,7 @@ const en: Dict = {
     whoseHint: "Filled from the source account when it is linked to a project.", btn: "Transfer between accounts",
   },
   ext: {
-    title: "Money in / out (outside)", btn: "Outside money", save: "Record", list: "Movements", kind: "Type", acc: "Account",
+    title: "Money in / out (outside)", direct: "Paid straight to a supplier", btn: "Outside money", save: "Record", list: "Movements", kind: "Type", acc: "Account",
     k: { owner_in: "Owner funding", loan_in: "Loan received", income: "Other income", owner_out: "Owner withdrawal", loan_out: "Loan repayment" },
     h: { owner_in: "Money the owner/partners put into the company — recorded as equity, not income or debt.",
          loan_in: "Someone lent you money to be returned — recorded as a debt in their name until repaid.",
@@ -461,6 +464,9 @@ const en: Dict = {
     saved: "Advance recorded", restFrom: "The rest ({amount}) is paid from", usedOn: "Deducted on invoices", notUsed: "Not deducted on any invoice yet.", delete: "Delete payment", deleteNote: "Removes the payment, its entry and any loan between parts; the money returns to the account. If it was deducted on invoices, remove those deductions on the invoice page first.", payments: "payments", poolIs: "This supplier's payments without invoices:", loanHint: "If the account holds another part's money than the project above (e.g. Kram's money on Al-Fatih's works), a loan between the parts is recorded automatically.", appliedOk: "Deducted from the advance",
   },
   exp: {
+    extOpt: "From an outside source (someone else)", extWho: "Who paid", extWhoPh: "Type the name", extLoan: "Counts as a loan to the company (to be repaid)",
+    extHintLoan: "Recorded as a debt in their name under “Loans we owe” until repaid. Bank is not affected.",
+    extHintGift: "Recorded as non-repayable funding (equity) — not a debt, not income. Bank is not affected.", extPay: "Pay from an outside source",
     title: "Expenses", new: "New expense", none: "No expenses yet.", project: "Project", general: "General expense (no project)",
     supplier: "Supplier / payee", supplierVat: "Supplier VAT number (if any)", docNumber: "Invoice number (if any)",
     date: "Date", net: "Amount excl. VAT", vat: "VAT", total: "Total paid", details: "Expense details",

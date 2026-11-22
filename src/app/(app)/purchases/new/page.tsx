@@ -30,12 +30,16 @@ export default async function NewExpense({ searchParams }: { searchParams: Promi
       const { data: accs } = await supabase.from("accounts").select("id,is_bank,system_key").eq("company_id", company.id);
       const acc = new Map((accs ?? []).map((a) => [a.id, a]));
       const p0 = pays?.[0];
-      let pay = "credit"; let custodyLabel: string | undefined;
+      let pay = "credit"; let custodyLabel: string | undefined; let extWho: string | undefined; let extLoan: boolean | undefined;
       if (p0?.advance_id) pay = `advance:${d.supplier_id}`;
       else if (p0 && acc.get(p0.bank_account_id)?.is_bank) pay = `account:${p0.bank_account_id}`;
       else if (p0 && acc.get(p0.bank_account_id)?.system_key === "partner_held_cash") {
         const { data: ln } = await supabase.from("journal_lines").select("project_id").eq("entry_id", p0.journal_entry_id).eq("account_id", p0.bank_account_id).maybeSingle();
         pay = `partner:${ln?.project_id ?? d.project_id}`;
+      } else if (p0 && ["loans_payable", "equity"].includes(acc.get(p0.bank_account_id)?.system_key ?? "")) {
+        pay = "external"; extLoan = acc.get(p0.bank_account_id)?.system_key === "loans_payable";
+        const { data: ef } = await supabase.from("external_funds").select("counterparty").eq("supplier_payment_id", p0.id).maybeSingle();
+        extWho = ef?.counterparty ?? "";
       } else if (p0 && acc.get(p0.bank_account_id)?.system_key === "custody" && d.custody_id) {
         pay = `custody:${d.custody_id}`;
         const { data: cu } = await supabase.from("v_custody").select("holder_name,purpose").eq("id", d.custody_id).maybeSingle();
@@ -44,13 +48,15 @@ export default async function NewExpense({ searchParams }: { searchParams: Promi
       const sup = d.supplier as unknown as { name_ar: string; vat_number: string | null } | null;
       initial = { id: d.id, details: d.details ?? "", projectId: d.project_id ?? "", date: d.issue_date, supplier: sup?.name_ar ?? "",
         vatNo: sup?.vat_number ?? "", docNumber: d.doc_number?.startsWith("NA-") ? "" : d.doc_number ?? "", net: String(d.net_amount),
-        noVat: Number(d.vat_amount) === 0, pay, commitmentId: d.commitment_id ?? "", custodyLabel };
+        noVat: Number(d.vat_amount) === 0, pay, commitmentId: d.commitment_id ?? "", custodyLabel, extWho, extLoan };
     }
   }
+  const { data: ext } = await supabase.from("external_funds").select("counterparty").eq("company_id", company.id).not("counterparty", "is", null).limit(500);
+  const payers = [...new Set((ext ?? []).map((x) => x.counterparty as string))];
   return (
     <div className="stack-lg">
       <h1 className="page-title">{initial ? t.exp.edit : t.exp.new}</h1>
-      <ExpenseForm t={t} companyId={company.id} initial={initial}
+      <ExpenseForm t={t} companyId={company.id} initial={initial} payers={payers}
         projects={(projects ?? []).map((p) => ({ id: p.id, name: `${p.code} · ${label(p)}`, code: p.code, group: p.group_id ?? p.id,
           partner: p.contract_holder === "partner" ? ((p.holder as unknown as { name_ar: string } | null)?.name_ar ?? "") : undefined }))}
         banks={(banks ?? []).map((b) => ({ id: b.id, name: `${b.code} · ${label(b)}`, projectId: b.project_id }))}

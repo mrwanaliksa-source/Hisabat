@@ -15,7 +15,7 @@ export default async function ExternalPage({ searchParams }: { searchParams: Pro
   const [{ data: banks }, { data: projects }, { data: rows }, { data: loans }] = await Promise.all([
     supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).eq("is_active", true).order("code"),
     supabase.from("projects").select("id,code,name_ar").eq("company_id", company.id).neq("status", "closed").order("code"),
-    supabase.from("external_funds").select("id,kind,fund_date,amount,account_id,project_id,counterparty,notes,reference").eq("company_id", company.id)
+    supabase.from("external_funds").select("id,kind,fund_date,amount,account_id,project_id,counterparty,notes,reference,supplier_payment_id").eq("company_id", company.id)
       .order("fund_date", { ascending: false }).limit(200),
     supabase.from("v_loans").select("counterparty,borrowed,repaid,owed").eq("company_id", company.id),
   ]);
@@ -54,15 +54,15 @@ export default async function ExternalPage({ searchParams }: { searchParams: Pro
               <tr key={r.id}>
                 <td className="num">{r.fund_date}</td>
                 <td>{t.ext.k[r.kind as keyof typeof t.ext.k]}{r.counterparty ? ` — ${r.counterparty}` : ""}</td>
-                <td>{bn.get(r.account_id)}</td><td className="num">{r.project_id ? pc.get(r.project_id) ?? "—" : t.mv.general}</td>
+                <td>{r.account_id ? bn.get(r.account_id) : <span className="muted">{t.ext.direct}</span>}</td><td className="num">{r.project_id ? pc.get(r.project_id) ?? "—" : t.mv.general}</td>
                 <td className="muted">{[r.notes, r.reference].filter(Boolean).join(" · ")}</td>
                 <td className={`n num ${kindsOut.includes(r.kind) ? "warn-text" : ""}`}>{kindsOut.includes(r.kind) ? "−" : "+"}{money(r.amount)}</td>
-                {role === "admin" && <td>
+                {role === "admin" && <td>{!r.supplier_payment_id &&
                   <form action={deleteExternal} className="inline-form">
                     <input type="hidden" name="id" value={r.id} />
                     <input name="reason" required placeholder={t.exp.reason} className="pw-input" />
                     <button className="btn ghost sm danger" data-act="delete-external">✕</button>
-                  </form></td>}
+                  </form>}</td>}
               </tr>))}
             </tbody>
           </table></div>
