@@ -20,6 +20,21 @@ export async function requestCustody(fd: FormData) {
   done(`/custody/${data}`, null, "sent");
 }
 
+export async function openCustody(fd: FormData) {
+  const { supabase, company } = await getContext();
+  if (!company) return;
+  const src = s(fd, "source");
+  const { data, error } = await supabase.rpc("open_custody", {
+    p_company: company.id,
+    p: { holder: s(fd, "holder"), amount: String(toNum(fd.get("amount"))), purpose: s(fd, "purpose"), project_id: s(fd, "project"),
+         date: s(fd, "date"), source: src === "external" ? "external" : "account", account_id: src.startsWith("account:") ? src.slice(8) : "",
+         ext_who: s(fd, "ext_who"), ext_loan: fd.get("ext_loan") === "1" },
+  });
+  revalidatePath("/cash/external");
+  if (error) done("/custody", error);
+  done(`/custody/${data}`, null, "opened");
+}
+
 export async function decideCustody(fd: FormData) {
   const { supabase } = await getContext();
   const id = s(fd, "id");

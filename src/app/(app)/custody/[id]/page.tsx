@@ -24,10 +24,13 @@ export default async function CustodyDetail({ params, searchParams }: { params: 
     supabase.from("custody_settlements").select("id,kind,amount,created_at,doc:purchase_documents(id,details,issue_date,supplier:parties!purchase_documents_supplier_id_fkey(name_ar))").eq("custody_id", id).order("created_at"),
     supabase.from("projects").select("id,code,name_ar,name_en").eq("company_id", company.id).neq("status", "closed").order("code"),
     supabase.from("parties").select("name_ar,vat_number").eq("company_id", company.id).eq("kind", "supplier").order("name_ar").limit(500),
-    supabase.from("custody_requests").select("approved1_by,approved2_by,project_id").eq("id", id).maybeSingle(),
+    supabase.from("custody_requests").select("approved1_by,approved2_by,approved1_at,approved2_at,project_id,bank_account_id").eq("id", id).maybeSingle(),
   ]);
+  const direct = !!req?.approved1_by && req.approved1_by === req.approved2_by && req.approved1_at === req.approved2_at;
   const { data: names } = await supabase.from("profiles").select("id,full_name")
-    .in("id", [co?.custody_approver_1, co?.custody_approver_2].filter(Boolean) as string[]);
+    .in("id", [co?.custody_approver_1, co?.custody_approver_2, req?.approved1_by].filter(Boolean) as string[]);
+  const { data: outside } = await supabase.from("external_funds").select("counterparty,kind").eq("custody_id", id).maybeSingle();
+  const srcBank = (banks ?? []).find((b) => b.id === req?.bank_account_id);
   const nameOf = (uid?: string | null) => (names ?? []).find((n) => n.id === uid)?.full_name ?? "—";
   const nm = (x: { name_ar: string; name_en: string | null }) => (lang === "en" && x.name_en) || x.name_ar;
 
@@ -51,7 +54,9 @@ export default async function CustodyDetail({ params, searchParams }: { params: 
       <div className="grid-2 top">
         <section className="card">
           <h2>{t.cus.approvals}</h2>
-          <ol className="steps">
+          {direct ? (
+            <p>{t.cus.directBy} <b>{nameOf(req?.approved1_by)}</b>{c.disbursed_on && <span className="muted small num"> · {c.disbursed_on}</span>}</p>
+          ) : <ol className="steps">
             <li className={req?.approved1_by ? "done" : c.status === "pending_1" ? "now" : ""}>
               <b>{t.cus.approver1}</b> · {nameOf(co?.custody_approver_1)}
               {c.approved1_at && <span className="muted small num"> · {String(c.approved1_at).slice(0, 10)}</span>}
@@ -60,7 +65,9 @@ export default async function CustodyDetail({ params, searchParams }: { params: 
               <b>{t.cus.approver2}</b> · {nameOf(co?.custody_approver_2)}
               {c.disbursed_on && <span className="muted small num"> · {c.disbursed_on}</span>}
             </li>
-          </ol>
+          </ol>}
+          {outside ? <p className="chips"><span className="chip">{t.cus.fromOutside} ({outside.counterparty}){outside.kind === "loan_in" ? ` — ${t.exp.extLoan}` : ""}</span></p>
+            : srcBank && <p className="muted small">{t.cus.source}: {srcBank.code} · {nm(srcBank)}</p>}
           {c.status === "rejected" && <p className="alert error">{t.cus.reason}: {c.reject_reason}</p>}
 
           {myStage > 0 && (

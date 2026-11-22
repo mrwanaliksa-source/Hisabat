@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money } from "@/lib/i18n";
 import { requestCustody } from "./actions";
+import { OpenCustodyForm } from "./OpenCustodyForm";
 
 type SP = Promise<{ new?: string; err?: string; ok?: string }>;
 
@@ -18,6 +19,14 @@ export default async function CustodyPage({ searchParams }: { searchParams: SP }
     supabase.from("companies").select("custody_approver_1,custody_approver_2").eq("id", company.id).maybeSingle(),
     supabase.from("projects").select("id,code,name_ar,name_en").eq("company_id", company.id).neq("status", "closed").order("code"),
   ]);
+  const admin = role === "admin";
+  const [{ data: banks }, { data: mem }, { data: ext }] = admin ? await Promise.all([
+    supabase.from("accounts").select("id,code,name_ar,name_en").eq("company_id", company.id).eq("is_bank", true).eq("is_active", true).order("code"),
+    supabase.from("memberships").select("user_id").eq("company_id", company.id).eq("is_active", true),
+    supabase.from("external_funds").select("counterparty").eq("company_id", company.id).not("counterparty", "is", null).limit(500),
+  ]) : [{ data: null }, { data: null }, { data: null }];
+  const { data: profs } = admin && mem?.length
+    ? await supabase.from("profiles").select("id,full_name").in("id", mem.map((m) => m.user_id)) : { data: null };
   const a1 = co?.custody_approver_1, a2 = co?.custody_approver_2;
   const all = rows ?? [];
   const awaiting = all.filter((r) => (r.status === "pending_1" && a1 === user.id) || (r.status === "pending_2" && a2 === user.id));
@@ -59,7 +68,18 @@ export default async function CustodyPage({ searchParams }: { searchParams: SP }
         </section>
       )}
 
-      <details className="card" open={!!sp.new || list.length === 0}>
+      {admin && (
+        <details className="card" open={!!sp.new || list.length === 0}>
+          <summary><h2>{t.cus.direct}</h2></summary>
+          <OpenCustodyForm t={t} me={user.id}
+            banks={(banks ?? []).map((b) => ({ id: b.id, name: `${b.code} · ${(lang === "en" && b.name_en) || b.name_ar}` }))}
+            projects={(projects ?? []).map((p) => ({ id: p.id, name: `${p.code} · ${(lang === "en" && p.name_en) || p.name_ar}` }))}
+            members={(profs ?? []).map((p) => ({ id: p.id, name: p.full_name || "—" })).sort((a, b) => a.name.localeCompare(b.name))}
+            payers={[...new Set((ext ?? []).map((x) => x.counterparty as string))]} />
+        </details>
+      )}
+
+      {!admin && <details className="card" open={!!sp.new || list.length === 0}>
         <summary><h2>{t.cus.request}</h2></summary>
         {noApprovers ? <p className="alert warn">{t.cus.noApprovers}</p> : (
           <form action={requestCustody} className="stack">
@@ -75,7 +95,7 @@ export default async function CustodyPage({ searchParams }: { searchParams: SP }
             <button className="btn primary" data-act="request">{t.cus.send}</button>
           </form>
         )}
-      </details>
+      </details>}
 
       <section className="card">
         <h2>{seeAll ? t.cus.all : t.cus.mine}</h2>
