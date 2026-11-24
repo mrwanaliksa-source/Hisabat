@@ -70,6 +70,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
         <section className="card stack" id="commitments">
           <h2>{t.cm.title}</h2>
           <p className="muted small">{t.cm.hint}</p>
+          {commits && commits.some((c) => !c.closed_at) && <p className="alert ok small">{t.cm.payHow}</p>}
           {commits && commits.length > 0 ? (
             <div className="table-wrap">
               <table>
@@ -81,8 +82,10 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                       <td><b>{c.supplier_name}</b></td><td>{c.title}</td><td className="num">{c.project_id ? pcode.get(c.project_id) : "—"}</td>
                       <td className="n num">{money(c.total_amount)}</td><td className="n num">{money(c.paid)}</td>
                       <td className="n num">{c.closed_at ? <span className="chip tiny">{t.cm.closed}</span> : <b className={Number(c.remaining) > 0.004 ? "warn-text" : ""}>{money(c.remaining)}</b>}</td>
-                      <td><form action={toggleCommitment}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="close" value={c.closed_at ? "0" : "1"} />
-                        <button className="btn ghost sm" data-act="toggle-commitment">{c.closed_at ? t.cm.reopen : t.cm.close}</button></form></td>
+                      <td><div className="actions">{!c.closed_at && Number(c.remaining) > 0.004 &&
+                        <Link className="btn soft sm" href={`/purchases/new?commitment=${c.id}`} data-act="pay-commitment">{t.cm.payPart}</Link>}
+                        <form action={toggleCommitment}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="close" value={c.closed_at ? "0" : "1"} />
+                        <button className="btn ghost sm" data-act="toggle-commitment">{c.closed_at ? t.cm.reopen : t.cm.close}</button></form></div></td>
                     </tr>
                   ))}
                 </tbody>

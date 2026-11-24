@@ -33,6 +33,11 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
     supabase.from("parties").select("id,name_ar,name_en").eq("company_id", company.id).eq("kind", "supplier"),
     supabase.from("v_supplier_advances").select("id,pay_date,amount,bank_account_id,supplier_name,notes,balance").eq("company_id", company.id),
   ]);
+  const [{ data: oadv }, { data: owns }] = await Promise.all([
+    supabase.from("owner_advances").select("id,owner_id,adv_date,amount,account_id,notes").eq("company_id", company.id).eq("kind", "advance").not("account_id", "is", null),
+    supabase.from("company_owners").select("id,name").eq("company_id", company.id),
+  ]);
+  const own = new Map((owns ?? []).map((o) => [o.id, o.name]));
   const bankName = new Map((banks ?? []).map((b) => [b.id, `${b.code} · ${(lang === "en" && b.name_en) || b.name_ar}`]));
   const bal = new Map((tb ?? []).map((r) => [r.account_id, Number(r.balance)]));
   const sn = new Map((supp ?? []).map((p) => [p.id, (lang === "en" && p.name_en) || p.name_ar]));
@@ -52,6 +57,8 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
                account: bankName.get(x.bank_account_id ?? "") ?? "", amount: Number(x.amount), href: `/projects/${x.project_id}` })),
     ...(ps ?? []).map((x) => ({ key: "p" + x.id, date: x.settle_date, type: t.cash.ptPartnerPay, payee: pn.get(x.partner_id) ?? "", detail: x.reference ?? "",
                account: bankName.get(x.bank_account_id) ?? "", amount: Number(x.amount) })),
+    ...(oadv ?? []).map((x) => ({ key: "o" + x.id, date: x.adv_date, type: t.own.k.advance, payee: own.get(x.owner_id) ?? "", detail: x.notes ?? "",
+               account: bankName.get(x.account_id) ?? "", amount: Number(x.amount), href: "/cash/owners" })),
   ].sort((a, b) => (a.date < b.date ? 1 : -1));
   const anyUnalloc = (receipts ?? []).some((r) => Number(r.unallocated) > 0.004);
   const pc = new Map((projects ?? []).map((p) => [p.id, p.code]));
@@ -62,6 +69,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
         <h1 className="page-title">{t.cash.title}</h1>
         <div className="actions">
           <Link href="/cash/external" className="btn soft">{t.ext.btn}</Link>
+          {canManage(role) && <Link href="/cash/owners" className="btn soft">{t.own.advBtn}</Link>}
           <Link href="/cash/move" className="btn soft">{t.mv.btn}</Link>
           <Link href="/cash/receipt/new" className="btn primary"><Icon name="in" /> {t.cash.newReceipt}</Link>
         </div>

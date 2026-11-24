@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getContext } from "@/lib/context";
 import { dict, getLang } from "@/lib/i18n";
-import { addMember, updateMember, saveCompany, createUser, resetPassword, addCompany, saveAccess, addBank, linkBank } from "./actions";
+import { addMember, updateMember, saveCompany, createUser, resetPassword, addCompany, saveAccess, addBank, linkBank, saveOwner } from "./actions";
 import { headers } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { displayLogin } from "@/lib/username";
@@ -24,6 +24,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     supabase.from("accounts").select("id,code,name_ar,project_id").eq("company_id", company.id).eq("is_bank", true).order("code"),
     supabase.from("projects").select("id,code,name_ar").eq("company_id", company.id).neq("status", "closed").order("code"),
   ]);
+  const { data: owners } = await supabase.from("company_owners").select("id,name,share_pct,is_active").eq("company_id", company.id).order("created_at");
+  const ownTotal = (owners ?? []).filter((o) => o.is_active).reduce((a, o) => a + Number(o.share_pct), 0);
   // companies where I am admin → access matrix
   const adminCos = memberships.filter((m) => m.role === "admin").map((m) => m.company);
   const { data: allMem } = adminCos.length
@@ -156,6 +158,33 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </div>
         <button className="btn primary self-start" data-act="save-company">{t.set.save}</button>
       </form>
+
+      <section className="card stack" id="owners">
+        <h2>{t.own.title}</h2>
+        <p className="muted small">{t.own.hint}</p>
+        {owners && owners.length > 0 && (
+          <table>
+            <thead><tr><th>{t.own.name}</th><th className="n">{t.own.pct}</th><th>{t.own.active}</th><th /></tr></thead>
+            <tbody>
+              {owners.map((o) => (
+                <tr key={o.id} className={o.is_active ? "" : "muted"}>
+                  <td><input form={`o-${o.id}`} name="name" defaultValue={o.name} required /></td>
+                  <td className="n"><input form={`o-${o.id}`} name="pct" defaultValue={String(Number(o.share_pct))} dir="ltr" inputMode="decimal" className="pw-input" /></td>
+                  <td><input form={`o-${o.id}`} type="checkbox" name="active" value="1" defaultChecked={o.is_active} /></td>
+                  <td><form id={`o-${o.id}`} action={saveOwner}><input type="hidden" name="id" value={o.id} />
+                    <button className="btn ghost sm" data-act="save-owner">{t.set.save}</button></form></td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot><tr><th>{t.own.total}</th><th className={`n num ${ownTotal > 100.0005 ? "warn-text" : ""}`}>{ownTotal.toLocaleString("en", { maximumFractionDigits: 3 })}٪</th><th colSpan={2} /></tr></tfoot>
+          </table>
+        )}
+        <form action={saveOwner} className="grid-3 mt">
+          <label className="field"><span>{t.own.name}<b className="req"> *</b></span><input name="name" required /></label>
+          <label className="field"><span>{t.own.pct}</span><input name="pct" dir="ltr" inputMode="decimal" placeholder="0" /></label>
+          <div className="field"><span>&nbsp;</span><button className="btn primary" data-act="add-owner">{t.own.add}</button></div>
+        </form>
+      </section>
 
       <section className="card stack" id="banks">
         <h2>{t.parts.banks}</h2>

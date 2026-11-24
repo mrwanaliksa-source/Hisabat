@@ -50,11 +50,12 @@ export default async function PayablesReport({ searchParams }: { searchParams: P
         <p className="muted small">{t.cm.hint}</p>
         {cms && cms.length > 0 ? (
           <table>
-            <thead><tr><th>{t.adv.supplier}</th><th>{t.cm.title1}</th><th className="n">{t.cm.total}</th><th className="n">{t.cm.paid}</th><th className="n">{t.cm.remaining}</th></tr></thead>
+            <thead><tr><th>{t.adv.supplier}</th><th>{t.cm.title1}</th><th className="n">{t.cm.total}</th><th className="n">{t.cm.paid}</th><th className="n">{t.cm.remaining}</th><th /></tr></thead>
             <tbody>{cms.map((c) => (
               <tr key={c.id}><td>{c.supplier_name}</td><td className="muted">{c.title}</td><td className="n num">{money(c.total_amount)}</td>
-                <td className="n num">{money(c.paid)}</td><td className="n num"><b>{money(c.remaining)}</b></td></tr>))}</tbody>
-            <tfoot><tr><th colSpan={4}>{t.rep.total}</th><th className="n num">{money(cmTotal)}</th></tr></tfoot>
+                <td className="n num">{money(c.paid)}</td><td className="n num"><b>{money(c.remaining)}</b></td>
+                <td>{Number(c.remaining) > 0.004 && <Link className="btn soft sm" href={`/purchases/new?commitment=${c.id}`}>{t.cm.payPart}</Link>}</td></tr>))}</tbody>
+            <tfoot><tr><th colSpan={4}>{t.rep.total}</th><th className="n num">{money(cmTotal)}</th><th /></tr></tfoot>
           </table>
         ) : <p className="muted">{t.cm.none}</p>}
       </section>

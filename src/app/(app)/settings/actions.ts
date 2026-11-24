@@ -119,3 +119,14 @@ export async function linkBank(fd: FormData) {
   revalidatePath("/", "layout");
   redirect(`/settings${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=1"}#banks`);
 }
+
+export async function saveOwner(fd: FormData) {
+  const { supabase, company } = await getContext();
+  if (!company) return;
+  const { error } = await supabase.rpc("save_owner", {
+    p_company: company.id, p_id: s(fd, "id") || null, p_name: s(fd, "name"),
+    p_pct: Number(s(fd, "pct").replace(/[٪%,\s]/g, "") || 0), p_active: s(fd, "id") ? fd.get("active") === "1" : true,
+  });
+  revalidatePath("/settings"); revalidatePath("/cash/owners");
+  redirect(`/settings${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=1"}#owners`);
+}

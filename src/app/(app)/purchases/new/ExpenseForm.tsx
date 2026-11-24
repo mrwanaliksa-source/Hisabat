@@ -11,19 +11,20 @@ type Adv = { id: string; supplier: string; balance: number; projectId: string | 
 type Cm = { id: string; supplier: string; title: string; remaining: number; projectId: string | null };
 export type Initial = { id: string; details: string; projectId: string; date: string; supplier: string; vatNo: string; docNumber: string;
   net: string; noVat: boolean; pay: string; commitmentId: string; custodyLabel?: string; extWho?: string; extLoan?: boolean };
-type Props = { t: Dict; commitments: Cm[]; initial?: Initial; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[]; payers?: string[] };
+type Props = { t: Dict; commitments: Cm[]; initial?: Initial; companyId: string; projects: Opt[]; banks: Opt[]; suppliers: { name: string; vat: string }[]; advances: Adv[]; payers?: string[]; presetCm?: string };
 
 const validVat = (v: string) => /^3\d{13}3$/.test(v.replace(/\D/g, ""));
 
-export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances, commitments, initial, payers = [] }: Props) {
+export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances, commitments, initial, payers = [], presetCm }: Props) {
+  const pre = presetCm ? commitments.find((c) => c.id === presetCm) ?? null : null;
   const [extLoan, setExtLoan] = useState(initial?.extLoan ?? true);
   const [state, action, pending] = useActionState<FormState, FormData>(createExpense, {});
-  const [supplier, setSupplier] = useState(initial?.supplier ?? "");
-  const [projectId, setProjectId] = useState(initial?.projectId ?? (projects.length === 1 ? projects[0].id : ""));
-  const [vatNo, setVatNo] = useState(initial?.vatNo ?? "");
+  const [supplier, setSupplier] = useState(initial?.supplier ?? pre?.supplier ?? "");
+  const [projectId, setProjectId] = useState(initial?.projectId ?? pre?.projectId ?? (projects.length === 1 ? projects[0].id : ""));
+  const [vatNo, setVatNo] = useState(initial?.vatNo ?? (pre ? suppliers.find((x) => x.name === pre.supplier)?.vat ?? "" : ""));
   const [net, setNet] = useState(initial?.net ?? "");
   const [noVat, setNoVat] = useState(initial?.noVat ?? false);
-  const [cmId, setCmId] = useState(initial?.commitmentId ?? "");
+  const [cmId, setCmId] = useState(initial?.commitmentId ?? pre?.id ?? "");
   const cm = commitments.find((c) => c.id === cmId) ?? null;
   const defPay = banks[1] ? `account:${banks[1].id}` : banks[0] ? `account:${banks[0].id}` : "credit";
   const [pay, setPay] = useState(initial?.pay ?? defPay);
@@ -70,6 +71,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
 
   return (
     <form action={action} className="stack-lg narrow-form">
+      {pre && <p className="alert ok">{t.cm.payingFor}: <b>{pre.supplier}</b> — {pre.title} — {t.cm.remaining} <b className="num">{fmt(pre.remaining)}</b></p>}
       {initial && (
         <fieldset className="card">
           <legend>{t.exp.editing}</legend>
@@ -82,7 +84,7 @@ export function ExpenseForm({ t, companyId, projects, banks, suppliers, advances
         <legend>{t.exp.details}</legend>
         <label className="field">
           <span>{t.exp.details}<b className="req"> *</b></span>
-          <textarea name="details" required rows={3} placeholder={t.exp.detailsHint} defaultValue={initial?.details} />
+          <textarea name="details" required rows={3} placeholder={t.exp.detailsHint} defaultValue={initial?.details ?? (pre ? `${t.cm.payOf} ${pre.title}` : undefined)} />
         </label>
         <div className="grid-2">
           <label className="field">

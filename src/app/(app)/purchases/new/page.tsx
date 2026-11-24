@@ -3,8 +3,8 @@ import { getContext } from "@/lib/context";
 import { dict, getLang } from "@/lib/i18n";
 import { ExpenseForm, type Initial } from "./ExpenseForm";
 
-export default async function NewExpense({ searchParams }: { searchParams: Promise<{ edit?: string }> }) {
-  const { edit } = await searchParams;
+export default async function NewExpense({ searchParams }: { searchParams: Promise<{ edit?: string; commitment?: string }> }) {
+  const { edit, commitment } = await searchParams;
   const lang = await getLang();
   const t = dict(lang);
   const { supabase, company, role } = await getContext();
@@ -56,7 +56,7 @@ export default async function NewExpense({ searchParams }: { searchParams: Promi
   return (
     <div className="stack-lg">
       <h1 className="page-title">{initial ? t.exp.edit : t.exp.new}</h1>
-      <ExpenseForm t={t} companyId={company.id} initial={initial} payers={payers}
+      <ExpenseForm t={t} companyId={company.id} initial={initial} payers={payers} presetCm={initial ? undefined : commitment}
         projects={(projects ?? []).map((p) => ({ id: p.id, name: `${p.code} · ${label(p)}`, code: p.code, group: p.group_id ?? p.id,
           partner: p.contract_holder === "partner" ? ((p.holder as unknown as { name_ar: string } | null)?.name_ar ?? "") : undefined }))}
         banks={(banks ?? []).map((b) => ({ id: b.id, name: `${b.code} · ${label(b)}`, projectId: b.project_id }))}

@@ -167,11 +167,18 @@ const ar = {
          income: "دخل مش من عميل (بيع خردة، عمولة…) — بيتسجل إيراد، ولو اخترت مشروع بيدخل في ربحه.",
          owner_out: "فلوس خدها المالك من الشركة — بتقلل رأس المال، مش مصروف.",
          loan_out: "رجّعت جزء أو كل سلفة — بتقلل الدين اللي عليك للشخص ده." },
-    direct: "دفع مباشر لمورد", toAcc: "دخلت في", fromAcc: "طلعت من", who: "اسم الشخص / الجهة", loans: "سلف علينا لسه", borrowed: "اتسلفنا", repaid: "رجّعنا", owed: "الباقي علينا",
+    direct: "اتدفع مباشر (مش من البنك)", toAcc: "دخلت في", fromAcc: "طلعت من", who: "اسم الشخص / الجهة", loans: "سلف علينا لسه", borrowed: "اتسلفنا", repaid: "رجّعنا", owed: "الباقي علينا",
   },
   sup: {
     title: "الموردين", btn: "الموردين", name: "اسم المورد", vat: "الرقم الضريبي", invoices: "فواتير", total: "إجمالي الفواتير",
     search: "دوّر بالاسم أو الرقم الضريبي", hint: "صحّح اسم المورد أو رقمه الضريبي من هنا. الرقم الضريبي لازم يكون لمورد واحد بس — لو رقم اتسجل على مورد غلط، امسحه من عنده واحفظ. وبعدين افتح أي فاتورة اتسجلت على مورد غلط ← تعديل المصروف ← اكتب المورد الصح.",
+  },
+  own: {
+    title: "شركاء الشركة", srcTitle: "السلفة طلعت منين؟", intoTitle: "الفلوس رجعت فين؟", onProject: "على حساب مشروع", noProject: "— عامة (مش على مشروع)", byProject: "السلف حسب المشروع", project: "المشروع", source: "المصدر", outside: "من برا", moneyOf: "فلوس", hint: "أصحاب الشركة نفسها ونسبة كل واحد. النسب مجموعها ما يعديش 100٪.", name: "اسم الشريك", pct: "النسبة ٪",
+    active: "نشط", add: "إضافة شريك", total: "مجموع النسب", none: "مفيش شركاء متسجلين — ضيفهم من الإعدادات.",
+    adv: "سلف الشركاء", advBtn: "سلف الشركاء", advHint: "سلفة لشريك من فلوس الشركة — مش مصروف ومش بتأثر على ربح المشاريع. بتفضل عليه لحد ما يرجّعها أو تتخصم من نصيبه.",
+    kind: "النوع", k: { advance: "سلفة للشريك", repay: "رد سلفة من الشريك" }, from: "طلعت من / دخلت في", save: "تسجيل",
+    advanced: "اتسلف", repaid: "رجّع", balance: "الباقي عليه", list: "السجل", manage: "إدارة الشركاء",
   },
   co: {
     choose: "اختار الشركة", chooseHint: "حسابك له صلاحية على أكتر من شركة. اختار هتشتغل على أنهي واحدة؛ وتقدر تبدّل من فوق في أي وقت.",
@@ -184,7 +191,7 @@ const ar = {
     none: "— لا يدخل", added: "تمت إضافة الشركة", saved: "تم حفظ الصلاحية",
   },
   cm: {
-    title: "التزامات للموردين (نسب واتفاقات)", hint: "مبلغ متفق عليه بيتدفع على مراحل (زي نسبة مبيعات). مش بيتحسب تكلفة غير اللي بيتدفع منه.",
+    title: "التزامات للموردين (نسب واتفاقات)", payPart: "ادفع جزء", payOf: "دفعة من:", payingFor: "بتدفع على حساب", payHow: "علشان تدفع جزء من التزام: اضغط «ادفع جزء» جنبه — هيفتحلك مصروف جاهز، اكتب المبلغ واختار اتدفع منين.", hint: "مبلغ متفق عليه بيتدفع على مراحل (زي نسبة مبيعات). مش بيتحسب تكلفة غير اللي بيتدفع منه.",
     title1: "الالتزام", total: "الإجمالي", paid: "المدفوع", remaining: "الباقي", add: "إضافة التزام", none: "لا توجد التزامات.",
     on: "على حساب التزام", noneOpt: "— مش على حساب التزام", link: "ربط بالتزام", linked: "على حساب",
     close: "قفل", reopen: "فتح", closed: "مقفول", after: "بعد المصروف ده", of: "من",
@@ -427,7 +434,7 @@ const en: Dict = {
     whoseHint: "Filled from the source account when it is linked to a project.", btn: "Transfer between accounts",
   },
   ext: {
-    title: "Money in / out (outside)", direct: "Paid straight to a supplier", btn: "Outside money", save: "Record", list: "Movements", kind: "Type", acc: "Account",
+    title: "Money in / out (outside)", direct: "Paid directly (not via bank)", btn: "Outside money", save: "Record", list: "Movements", kind: "Type", acc: "Account",
     k: { owner_in: "Owner funding", loan_in: "Loan received", income: "Other income", owner_out: "Owner withdrawal", loan_out: "Loan repayment" },
     h: { owner_in: "Money the owner/partners put into the company — recorded as equity, not income or debt.",
          loan_in: "Someone lent you money to be returned — recorded as a debt in their name until repaid.",
@@ -440,6 +447,13 @@ const en: Dict = {
     title: "Suppliers", btn: "Suppliers", name: "Supplier name", vat: "VAT number", invoices: "Invoices", total: "Invoices total",
     search: "Search by name or VAT number", hint: "Fix a supplier's name or VAT number here. A VAT number belongs to one supplier only — if it was saved on the wrong one, clear it there and save. Then open any invoice recorded under the wrong supplier → Edit expense → type the right supplier.",
   },
+  own: {
+    title: "Company owners", srcTitle: "Where did the advance come from?", intoTitle: "Where did the money come back to?", onProject: "Against a project", noProject: "— General (no project)", byProject: "Advances by project", project: "Project", source: "Source", outside: "From outside", moneyOf: "money of", hint: "The company's own owners and each one's share. Shares can't exceed 100%.", name: "Owner name", pct: "Share %",
+    active: "Active", add: "Add owner", total: "Total shares", none: "No owners yet — add them in Settings.",
+    adv: "Owner advances", advBtn: "Owner advances", advHint: "An advance to an owner from company money — not an expense, doesn't touch project profit. Stays on them until repaid or deducted from their share.",
+    kind: "Type", k: { advance: "Advance to owner", repay: "Repayment from owner" }, from: "From / into", save: "Record",
+    advanced: "Advanced", repaid: "Repaid", balance: "Still owes", list: "Register", manage: "Manage owners",
+  },
   co: {
     choose: "Choose a company", chooseHint: "Your account can access more than one company. Pick one to work in; you can switch at the top any time.",
     noAccess: "You don't have access to this company.", switch: "Switch company", enter: "Enter",
@@ -451,7 +465,7 @@ const en: Dict = {
     none: "— no access", added: "Company added", saved: "Access saved",
   },
   cm: {
-    title: "Supplier commitments (commissions & agreements)", hint: "An agreed total paid in stages (e.g. a sales commission). Only what is paid becomes a cost.",
+    title: "Supplier commitments (commissions & agreements)", payPart: "Pay part", payOf: "Payment of:", payingFor: "Paying towards", payHow: "To pay part of a commitment, click “Pay part” next to it — it opens a ready expense; enter the amount and where it was paid from.", hint: "An agreed total paid in stages (e.g. a sales commission). Only what is paid becomes a cost.",
     title1: "Commitment", total: "Total", paid: "Paid", remaining: "Remaining", add: "Add commitment", none: "No commitments.",
     on: "Against a commitment", noneOpt: "— not against a commitment", link: "Link to commitment", linked: "Against",
     close: "Close", reopen: "Reopen", closed: "Closed", after: "after this expense", of: "of",
