@@ -81,9 +81,12 @@ export default async function ProjectDetail({ params, searchParams }: { params: 
         </div>
         <div className="actions wrap">
           {!closed && <Link href={`/sales/new?project=${id}&type=progress_claim`} className="btn primary">{t.docType.progress_claim} +</Link>}
-          {Number(p.advance_amount) > 0 && Number(bal?.advance_invoiced ?? 0) === 0 && (
-            <Link href={`/sales/new?project=${id}&type=advance`} className="btn soft">{t.docType.advance} +</Link>
-          )}
+          {!closed && (() => {
+            const total = Number(p.advance_amount), done = Number(bal?.advance_invoiced ?? 0), rest = Math.round((total - done) * 100) / 100;
+            if (done === 0) return <Link href={`/sales/new?project=${id}&type=advance${total > 0 ? `&value=${total}` : ""}`} className="btn soft">{t.docType.advance} +</Link>;
+            return <Link href={`/sales/new?project=${id}&type=advance${rest >= 1 ? `&value=${rest}` : ""}`} className="btn soft" data-act="advance-rest">
+              {rest >= 1 ? `${t.advRest} (${money(rest)}) +` : `${t.docType.advance} +`}</Link>;
+          })()}
           {Number(bal?.retention_outstanding ?? 0) > 0 && (
             <Link href={`/sales/new?project=${id}&type=retention_release`} className="btn soft">{t.docType.retention_release} +</Link>
           )}

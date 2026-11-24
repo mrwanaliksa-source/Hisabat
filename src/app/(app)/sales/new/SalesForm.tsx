@@ -6,13 +6,13 @@ import { calcDoc, fmt, r2, toNum, type DocType, type ProjectTerms } from "@/lib/
 import type { Dict } from "@/lib/i18n";
 
 type Opt = { terms: ProjectTerms; label: string; customer: string; government: boolean; partnerShare: number };
-type Props = { t: Dict; projects: Opt[]; initialProject: string; initialType: string };
+type Props = { t: Dict; projects: Opt[]; initialProject: string; initialType: string; initialValue?: string };
 
-export function SalesForm({ t, projects, initialProject, initialType }: Props) {
+export function SalesForm({ t, projects, initialProject, initialType, initialValue }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(createSalesDoc, {});
   const [projectId, setProjectId] = useState(initialProject || (projects.length === 1 ? projects[0].terms.id : ""));
   const [type, setType] = useState<DocType>((["advance", "progress_claim", "retention_release", "other"].includes(initialType) ? initialType : "progress_claim") as DocType);
-  const [work, setWork] = useState("");
+  const [work, setWork] = useState(initialValue ?? "");
   const [discount, setDiscount] = useState("");
   const [printed, setPrinted] = useState("");
 

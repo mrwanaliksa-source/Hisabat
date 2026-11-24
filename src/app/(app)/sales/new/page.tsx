@@ -3,7 +3,7 @@ import { dict, getLang } from "@/lib/i18n";
 import type { ProjectTerms } from "@/lib/calc";
 import { SalesForm } from "./SalesForm";
 
-export default async function NewSalesDoc({ searchParams }: { searchParams: Promise<{ project?: string; type?: string }> }) {
+export default async function NewSalesDoc({ searchParams }: { searchParams: Promise<{ project?: string; type?: string; value?: string }> }) {
   const sp = await searchParams;
   const lang = await getLang();
   const t = dict(lang);
@@ -40,7 +40,7 @@ export default async function NewSalesDoc({ searchParams }: { searchParams: Prom
   return (
     <div className="stack-lg">
       <h1 className="page-title">{t.sales.newDoc}</h1>
-      <SalesForm t={t} projects={opts} initialProject={sp.project ?? ""} initialType={sp.type ?? "progress_claim"} />
+      <SalesForm t={t} projects={opts} initialProject={sp.project ?? ""} initialType={sp.type ?? "progress_claim"} initialValue={sp.value} />
     </div>
   );
 }
