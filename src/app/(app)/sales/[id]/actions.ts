@@ -25,3 +25,11 @@ export async function docAction(fd: FormData) {
   }
   back(id, error ? `?err=${encodeURIComponent(error.message)}` : `?ok=${what}`);
 }
+
+export async function unallocate(fd: FormData) {
+  const { supabase } = await getContext();
+  const id = String(fd.get("id"));
+  const { error } = await supabase.rpc("unallocate_receipt", { p_alloc: String(fd.get("alloc")), p_reason: String(fd.get("reason") ?? "") });
+  revalidatePath("/cash"); revalidatePath(`/projects`);
+  back(id, error ? `?err=${encodeURIComponent(error.message)}` : "?ok=unallocated");
+}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money, pct } from "@/lib/i18n";
-import { docAction } from "./actions";
+import { docAction , unallocate } from "./actions";
 
 type Params = Promise<{ id: string }>;
 type SP = Promise<{ err?: string; ok?: string }>;
@@ -57,11 +57,15 @@ export default async function SalesDocPage({ params, searchParams }: { params: P
           <h1 className="page-title"><Link href={`/projects/${proj.id}`}>{proj.code} · {nm(proj)}</Link></h1>
           <p className="muted">{nm(cust)} · <span className="num">{d.issue_date}</span></p>
         </div>
-        <span className={`chip big ds-${d.status}`}>{t.docStatus[d.status as keyof typeof t.docStatus]}</span>
+        <div className="actions">
+          {role === "admin" && d.status === "posted" && <Link href={`/sales/new?edit=${id}`} className="btn soft" data-act="edit-sales">{t.sales.editBtn}</Link>}
+          <span className={`chip big ds-${d.status}`}>{t.docStatus[d.status as keyof typeof t.docStatus]}</span>
+        </div>
       </div>
 
       {sp.err && <p className="alert error">{sp.err}</p>}
       {sp.ok === "approve" && <p className="alert ok">✓ {t.sales.posted}</p>}
+      {sp.ok === "edited" && <p className="alert ok">✓ {t.sales.edited}</p>}
       {d.review_reason && <p className="alert warn"><b>{t.sales.reviewReason}:</b> {d.review_reason}</p>}
       {previewError && <p className="alert error">{previewError}</p>}
 
@@ -146,7 +150,15 @@ export default async function SalesDocPage({ params, searchParams }: { params: P
                 <tbody>
                   {allocs.map((a) => {
                     const r = a.receipt as unknown as { receipt_date: string; reference: string | null };
-                    return <tr key={a.id}><td className="num">{r?.receipt_date}</td><td className="num">{r?.reference ?? "—"}</td><td className="n num">{money(a.amount)}</td></tr>;
+                    return <tr key={a.id}><td className="num">{r?.receipt_date}</td><td className="num">{r?.reference ?? "—"}</td><td className="n num">{money(a.amount)}</td>
+                      <td><details className="inline-menu">
+                        <summary className="btn ghost sm danger" data-act="unalloc-open">{t.unalloc}</summary>
+                        <form action={unallocate} className="stack pop">
+                          <input type="hidden" name="id" value={id} /><input type="hidden" name="alloc" value={a.id} />
+                          <p className="muted small">{t.unallocHint}</p>
+                          <input name="reason" required placeholder={t.exp.reason} />
+                          <button className="btn primary sm danger-fill" data-act="unalloc">{t.unalloc}</button>
+                        </form></details></td></tr>;
                   })}
                 </tbody>
               </table>

@@ -1,20 +1,22 @@
 "use client";
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { createSalesDoc, type FormState } from "./actions";
+import { createSalesDoc, editSalesDoc, type FormState } from "./actions";
 import { calcDoc, fmt, r2, toNum, type DocType, type ProjectTerms } from "@/lib/calc";
 import type { Dict } from "@/lib/i18n";
 
 type Opt = { terms: ProjectTerms; label: string; customer: string; government: boolean; partnerShare: number };
-type Props = { t: Dict; projects: Opt[]; initialProject: string; initialType: string; initialValue?: string };
+export type EditDoc = { id: string; project: string; type: string; work: string; discount: string; printed: string; ref: string;
+  issue: string; supply: string; po: string; notes: string };
+type Props = { t: Dict; projects: Opt[]; initialProject: string; initialType: string; initialValue?: string; edit?: EditDoc };
 
-export function SalesForm({ t, projects, initialProject, initialType, initialValue }: Props) {
-  const [state, action, pending] = useActionState<FormState, FormData>(createSalesDoc, {});
-  const [projectId, setProjectId] = useState(initialProject || (projects.length === 1 ? projects[0].terms.id : ""));
-  const [type, setType] = useState<DocType>((["advance", "progress_claim", "retention_release", "other"].includes(initialType) ? initialType : "progress_claim") as DocType);
-  const [work, setWork] = useState(initialValue ?? "");
-  const [discount, setDiscount] = useState("");
-  const [printed, setPrinted] = useState("");
+export function SalesForm({ t, projects, initialProject, initialType, initialValue, edit }: Props) {
+  const [state, action, pending] = useActionState<FormState, FormData>(edit ? editSalesDoc : createSalesDoc, {});
+  const [projectId, setProjectId] = useState(edit?.project || initialProject || (projects.length === 1 ? projects[0].terms.id : ""));
+  const [type, setType] = useState<DocType>((["advance", "progress_claim", "retention_release", "other"].includes(edit?.type ?? initialType) ? (edit?.type ?? initialType) : "progress_claim") as DocType);
+  const [work, setWork] = useState(edit?.work ?? initialValue ?? "");
+  const [discount, setDiscount] = useState(edit?.discount ?? "");
+  const [printed, setPrinted] = useState(edit?.printed ?? "");
 
   const p = projects.find((x) => x.terms.id === projectId) ?? null;
   const c = calcDoc(type, toNum(work), toNum(discount), p?.terms ?? null);
@@ -27,12 +29,16 @@ export function SalesForm({ t, projects, initialProject, initialType, initialVal
 
   return (
     <form action={action} className="form-grid">
+      {edit && <input type="hidden" name="edit_id" value={edit.id} />}
+      {edit && <input type="hidden" name="project_id" value={edit.project} />}
+      {edit && <input type="hidden" name="doc_type" value={edit.type} />}
       <div className="form-main stack-lg">
+        {edit && <p className="alert warn">{t.sales.editPostedHint}</p>}
         <fieldset className="card">
           <legend>{t.sales.project}</legend>
           <label className="field">
             <span>{t.sales.chooseProject}<b className="req"> *</b></span>
-            <select name="project_id" required value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+            <select name={edit ? undefined : "project_id"} disabled={!!edit} required value={projectId} onChange={(e) => setProjectId(e.target.value)}>
               <option value="">—</option>
               {projects.map((o) => <option key={o.terms.id} value={o.terms.id}>{o.label}</option>)}
             </select>
@@ -42,7 +48,7 @@ export function SalesForm({ t, projects, initialProject, initialType, initialVal
           <div className="seg" role="radiogroup" aria-label={t.sales.docType}>
             {(["progress_claim", "advance", "retention_release", "other"] as DocType[]).map((k) => (
               <label key={k} className={type === k ? "on" : ""}>
-                <input type="radio" name="doc_type" value={k} checked={type === k} onChange={() => setType(k)} />
+                <input type="radio" name={edit ? undefined : "doc_type"} disabled={!!edit && type !== k} value={k} checked={type === k} onChange={() => setType(k)} />
                 {t.docType[k]}
               </label>
             ))}
@@ -75,29 +81,35 @@ export function SalesForm({ t, projects, initialProject, initialType, initialVal
         <fieldset className="card">
           <legend>{t.sales.issuerRef}</legend>
           <div className="grid-2">
-            <label className="field"><span>{t.sales.issuerRef}</span><input name="issuer_ref" dir="ltr" placeholder="INV-2026-0001" /></label>
+            <label className="field"><span>{t.sales.issuerRef}</span><input name="issuer_ref" dir="ltr" placeholder="INV-2026-0001" defaultValue={edit?.ref} /></label>
             <label className="field">
               <span>{t.sales.printedTotal}</span>
               <input name="printed_total" inputMode="decimal" dir="ltr" value={printed} onChange={(e) => setPrinted(e.target.value)} placeholder="0.00" />
             </label>
-            <label className="field"><span>{t.sales.issueDate}<b className="req"> *</b></span><input type="date" name="issue_date" required defaultValue={new Date().toISOString().slice(0, 10)} /></label>
-            <label className="field"><span>{t.sales.supplyDate}</span><input type="date" name="supply_date" /></label>
+            <label className="field"><span>{t.sales.issueDate}<b className="req"> *</b></span><input type="date" name="issue_date" required defaultValue={edit?.issue || new Date().toISOString().slice(0, 10)} /></label>
+            <label className="field"><span>{t.sales.supplyDate}</span><input type="date" name="supply_date" defaultValue={edit?.supply} /></label>
             {p?.government && (
-              <label className="field"><span>{t.sales.paymentOrderDate}</span><input type="date" name="payment_order_date" /></label>
+              <label className="field"><span>{t.sales.paymentOrderDate}</span><input type="date" name="payment_order_date" defaultValue={edit?.po} /></label>
             )}
           </div>
           <p className="muted small">{t.sales.printedHint}</p>
           {match === true && <p className="alert ok">✓ {t.sales.totalOk}</p>}
           {match === false && <p className="alert warn">{t.sales.totalMismatch}: <span className="num">{fmt(printedN!)}</span> ≠ <span className="num">{fmt(c.invoiceTotal)}</span></p>}
-          <label className="field"><span>{t.sales.notes}</span><input name="notes" /></label>
+          <label className="field"><span>{t.sales.notes}</span><input name="notes" defaultValue={edit?.notes} /></label>
         </fieldset>
 
         {state.error && <p className="alert error">{state.error}</p>}
         <div className="actions wrap">
+          {edit ? (<>
+            <label className="field grow"><span>{t.exp.reason}<b className="req"> *</b></span><input name="reason" required /></label>
+            <button className="btn primary" data-act="save-edit" disabled={pending || c.error === "release"}>{t.sales.saveEdit}</button>
+            <Link href={`/sales/${edit.id}`} className="btn ghost">{t.form.cancel}</Link>
+          </>) : (<>
           <input type="hidden" name="intent" defaultValue="submit" />
           <button className="btn primary" data-act="submit" onClick={(e) => setIntent(e, "submit")} disabled={pending || c.error === "release"}>{t.sales.saveSubmit}</button>
           <button className="btn soft" data-act="draft" onClick={(e) => setIntent(e, "draft")} disabled={pending}>{t.sales.saveDraft}</button>
           <Link href="/sales" className="btn ghost">{t.form.cancel}</Link>
+          </>)}
         </div>
       </div>
 

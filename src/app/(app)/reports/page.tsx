@@ -9,7 +9,7 @@ export default async function ReportsIndex() {
   const { role } = await getContext();
   if (!canManage(role)) redirect("/");
   const items: [string, { t: string; d: string }, string][] = [
-    ["profit", t.rep.profit, "reports"], ["vat", t.rep.vat, "sales"], ["aging", t.rep.aging, "in"],
+    ["profit", t.rep.profit, "reports"], ["vat", t.rep.vat, "sales"], ["partner-month", t.rep.pm, "sales"], ["aging", t.rep.aging, "in"],
     ["payables", t.rep.payables, "out"], ["advances", t.rep.adv, "projects"], ["partners", t.rep.partners, "projects"],
     ["custody", t.rep.custody, "camera"], ["trial-balance", t.rep.tb, "review"], ["ledger", t.rep.ledger, "cash"],
   ];

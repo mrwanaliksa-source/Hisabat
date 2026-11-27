@@ -50,3 +50,19 @@ export async function createSalesDoc(_prev: FormState, fd: FormData): Promise<Fo
   revalidatePath("/sales");
   redirect(`/sales/${data.id}`);
 }
+
+export async function editSalesDoc(_prev: FormState, fd: FormData): Promise<FormState> {
+  const { supabase } = await getContext();
+  const id = str(fd.get("edit_id"));
+  const work = toNum(fd.get("work_value"));
+  if (work <= 0) return { error: "المبلغ يجب أن يكون أكبر من صفر / Amount must be greater than zero" };
+  const { data, error } = await supabase.rpc("edit_sales_document", {
+    p_doc: id, p_reason: str(fd.get("reason")),
+    p: { work_value: String(work), discount: String(toNum(fd.get("discount"))), printed_total: str(fd.get("printed_total")),
+         issuer_ref: str(fd.get("issuer_ref")), issue_date: str(fd.get("issue_date")), supply_date: str(fd.get("supply_date")),
+         ...(fd.has("payment_order_date") ? { payment_order_date: str(fd.get("payment_order_date")) } : {}), notes: str(fd.get("notes")) },
+  });
+  if (error) return { error: error.code === "23505" ? "رقم الفاتورة مسجل من قبل / This invoice number is already recorded" : error.message };
+  revalidatePath("/sales"); revalidatePath(`/sales/${id}`); revalidatePath("/cash"); revalidatePath("/projects"); revalidatePath("/");
+  redirect(`/sales/${id}?ok=${data === "posted" ? "edited" : "submit"}`);
+}

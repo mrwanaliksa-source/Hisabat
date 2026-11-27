@@ -71,6 +71,7 @@ const ar = {
     savePartner: "حفظ بيانات الشريك", history: "سجل النسب",
   },
   sales: {
+    editDoc: "تعديل فاتورة", editBtn: "تعديل", saveEdit: "حفظ التعديل وإعادة الترحيل", edited: "اتعدلت الفاتورة واترحّلت تاني", editPostedHint: "الفاتورة دي معتمدة ومرحّلة. لما تحفظ: القيد القديم بيتعكس، والقيم الجديدة بتترحّل، والتحصيلات اللي كانت عليها بترجع عليها (لحد رصيدها الجديد). النسخة القديمة بتفضل في سجل التعديلات.",
     title: "المبيعات", newDoc: "مستند مبيعات جديد", noDocs: "لا توجد مستندات مبيعات بعد.",
     project: "المشروع", chooseProject: "اختر المشروع", docType: "نوع المستند", issuerRef: "رقم الفاتورة في نظام الإصدار",
     issueDate: "تاريخ الإصدار", supplyDate: "تاريخ التوريد (اختياري)", paymentOrderDate: "تاريخ أمر الدفع (جهة حكومية)",
@@ -90,6 +91,7 @@ const ar = {
     recordReceipt: "تسجيل تحصيل لهذا العميل", posted: "تم الاعتماد والترحيل", createdBy: "أدخله",
   },
   advRest: "باقي الدفعة المقدمة",
+  unalloc: "فك التخصيص", unallocHint: "المبلغ بيرجع «غير مخصص» على التحصيل وتقدر تخصصه صح من الكاش ← خصص الباقي",
   docType: { advance: "دفعة مقدمة", progress_claim: "مستخلص", retention_release: "إفراج عن محتجز", other: "فاتورة أخرى" },
   docStatus: { draft: "مسودة", submitted: "قيد المراجعة", needs_info: "مطلوب استكمال", rejected: "مرفوض", posted: "معتمد ومرحل" },
   review: { title: "المراجعة", empty: "لا توجد مستندات بانتظار المراجعة.", open: "فتح" },
@@ -118,6 +120,7 @@ const ar = {
     diff: "فرق التسوية", final: "الرصيد بعد التسوية", reason: "السبب", locked: "اتقفل في",
   },
   pp: {
+    otherDest: "فواتير للعميل ده مش ظاهرة فوق لأن مكان الاستلام مختلف", needPartner: "مشروع باسم الشريك — التحصيل لازم يتسجل «عند الشريك: {name}»", needBank: "مشروع باسم الشركة — التحصيل لازم يتسجل في بنك أو صندوق الشركة", switchTo: "حوّل الاستلام لـ", existingWrong: "التحصيل ده اتسجل في مكان غلط ومش هينفع يتخصص على الفواتير دي. الغيه من صفحة الكاش (زرار إلغاء) وسجّله تاني واختار مكان الاستلام الصح.",
     holder: "العقد والفواتير باسم", holderCompany: "شركتنا", holderPartner: "الشركة الشريكة",
     holderHint: "عند اختيار الشريك: الفواتير وضريبتها والتحصيل باسمه، ونحن ننفذ وندفع التكاليف.",
     basis: "أساس نسبة الشريك", basisCollections: "من صافي كل تحصيل بعد الضريبة", basisProfit: "من صافي ربح المشروع عند الإقفال",
@@ -246,6 +249,7 @@ const ar = {
     orExisting: "أو إضافة مستخدم موجود في Supabase", login: "الدخول",
   },
   rep: {
+    pm: { t: "الإقرار الشهري للشركاء", d: "الفواتير اللي اتصدرت على حساب كل شريك (كرم الإعمار، الفاتح…) في الشهر: ضريبة المبيعات وضريبة المشتريات اللي على حسابه.", month: "الشهر", partner: "الشريك", all: "كل الشركاء", sales: "فواتير مبيعات باسمه", purch: "فواتير مشتريات على ضريبته", ref: "رقم الفاتورة", project: "المشروع", type: "النوع", before: "قبل الضريبة", vat: "الضريبة", total: "الإجمالي", supplier: "المورد", ded: "ضريبة قابلة للخصم", out: "ضريبة المخرجات", inp: "ضريبة المدخلات", net: "صافي الضريبة المستحقة", none: "مفيش فواتير الشهر ده." },
     title: "التقارير", export: "تصدير Excel", print: "طباعة", from: "من", to: "إلى", apply: "عرض", total: "الإجمالي",
     asOf: "حتى تاريخ", none: "لا توجد بيانات في هذه الفترة.", open: "فتح",
     profit: { t: "ربحية المشروعات", d: "الإيراد والتكاليف وحصة الشريك والربح لكل مشروع مقابل الموازنة.",
@@ -346,6 +350,7 @@ const en: Dict = {
     savePartner: "Save partner terms", history: "Rate history",
   },
   sales: {
+    editDoc: "Edit invoice", editBtn: "Edit", saveEdit: "Save edit & re-post", edited: "Invoice updated and re-posted", editPostedHint: "This invoice is posted. Saving reverses its old entry, posts the new values, and puts its receipts back on it (up to its new balance) — the old version stays in the audit log.",
     title: "Sales", newDoc: "New sales document", noDocs: "No sales documents yet.",
     project: "Project", chooseProject: "Choose project", docType: "Document type", issuerRef: "Invoice no. in issuing system",
     issueDate: "Issue date", supplyDate: "Supply date (optional)", paymentOrderDate: "Payment order date (government)",
@@ -365,6 +370,7 @@ const en: Dict = {
     recordReceipt: "Record a receipt for this customer", posted: "Approved and posted", createdBy: "Entered by",
   },
   advRest: "Rest of the advance",
+  unalloc: "Unallocate", unallocHint: "The amount goes back to unallocated on the receipt; re-allocate it from Cash → Allocate rest",
   docType: { advance: "Advance payment", progress_claim: "Progress claim", retention_release: "Retention release", other: "Other invoice" },
   docStatus: { draft: "Draft", submitted: "Under review", needs_info: "Needs info", rejected: "Rejected", posted: "Posted" },
   review: { title: "Review", empty: "Nothing is waiting for review.", open: "Open" },
@@ -393,6 +399,7 @@ const en: Dict = {
     diff: "Adjustment", final: "Balance after adjustment", reason: "Reason", locked: "Locked on",
   },
   pp: {
+    otherDest: "Invoices of this customer hidden above because the receipt destination differs", needPartner: "Partner-held project — the receipt must be recorded as held by {name}", needBank: "Company project — the receipt must go to a company bank or cash box", switchTo: "Switch destination to", existingWrong: "This receipt was recorded in the wrong place and can’t be allocated to these invoices. Reverse it from the Cash page and record it again with the right destination.",
     holder: "Contract & invoices in the name of", holderCompany: "Our company", holderPartner: "The partner company",
     holderHint: "When the partner holds the contract, invoices, their VAT and collections are in its name; we execute and pay the costs.",
     basis: "Partner share basis", basisCollections: "% of each collection, net of VAT", basisProfit: "% of project net profit at close",
@@ -521,6 +528,7 @@ const en: Dict = {
     orExisting: "Or add a user that already exists in Supabase", login: "Login",
   },
   rep: {
+    pm: { t: "Monthly partner declaration", d: "Invoices issued under each partner (Kram, Al-Fatih…) in a month: sales VAT and purchase VAT on their account.", month: "Month", partner: "Partner", all: "All partners", sales: "Sales invoices in their name", purch: "Purchase invoices on their VAT", ref: "Invoice no.", project: "Project", type: "Type", before: "Before VAT", vat: "VAT", total: "Total", supplier: "Supplier", ded: "Deductible VAT", out: "Output VAT", inp: "Input VAT", net: "Net VAT payable", none: "No invoices this month." },
     title: "Reports", export: "Export to Excel", print: "Print", from: "From", to: "To", apply: "Show", total: "Total",
     asOf: "As of", none: "No data for this period.", open: "Open",
     profit: { t: "Project profitability", d: "Revenue, costs, partner share and profit per project against budget.",

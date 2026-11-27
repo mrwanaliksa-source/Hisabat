@@ -1,14 +1,21 @@
 import { getContext } from "@/lib/context";
 import { dict, getLang } from "@/lib/i18n";
 import type { ProjectTerms } from "@/lib/calc";
-import { SalesForm } from "./SalesForm";
+import { SalesForm, type EditDoc } from "./SalesForm";
 
-export default async function NewSalesDoc({ searchParams }: { searchParams: Promise<{ project?: string; type?: string; value?: string }> }) {
+export default async function NewSalesDoc({ searchParams }: { searchParams: Promise<{ project?: string; type?: string; value?: string; edit?: string }> }) {
   const sp = await searchParams;
   const lang = await getLang();
   const t = dict(lang);
-  const { supabase, company } = await getContext();
+  const { supabase, company, role } = await getContext();
   if (!company) return null;
+  const { data: ed } = sp.edit && role === "admin"
+    ? await supabase.from("sales_documents").select("*").eq("id", sp.edit).eq("company_id", company.id).eq("status", "posted").maybeSingle()
+    : { data: null };
+  const edit: EditDoc | undefined = ed ? {
+    id: ed.id, project: ed.project_id, type: ed.doc_type, work: String(Number(ed.work_value)), discount: Number(ed.discount) ? String(Number(ed.discount)) : "",
+    printed: ed.printed_total == null ? "" : String(Number(ed.printed_total)), ref: ed.issuer_ref ?? "", issue: ed.issue_date ?? "",
+    supply: ed.supply_date ?? "", po: ed.payment_order_date ?? "", notes: ed.notes ?? "" } : undefined;
 
   const [{ data: projects }, { data: bal }, { data: partners }] = await Promise.all([
     supabase.from("projects").select("id,code,name_ar,name_en,contract_value,recovery_pct,retention_pct,retention_cap_pct,retention_vat_mode,customer:parties!projects_customer_id_fkey(name_ar,name_en,is_government)")
@@ -26,8 +33,8 @@ export default async function NewSalesDoc({ searchParams }: { searchParams: Prom
     const terms: ProjectTerms = {
       id: p.id, contract_value: Number(p.contract_value), recovery_pct: Number(p.recovery_pct), retention_pct: Number(p.retention_pct),
       retention_cap_pct: p.retention_cap_pct == null ? null : Number(p.retention_cap_pct),
-      advance_outstanding: Number(x?.advance_outstanding ?? 0), retention_held: Number(x?.retention_held ?? 0),
-      retention_outstanding: Number(x?.retention_outstanding ?? 0),
+      advance_outstanding: Number(x?.advance_outstanding ?? 0) + (ed && ed.project_id === p.id ? (ed.doc_type === "progress_claim" ? Number(ed.advance_recovery) : 0) : 0), retention_held: Number(x?.retention_held ?? 0),
+      retention_outstanding: Number(x?.retention_outstanding ?? 0) + (ed && ed.project_id === p.id && ed.doc_type === "retention_release" ? Number(ed.work_value) : 0),
       vat_mode: p.retention_vat_mode === "B" ? "B" : "A",
     };
     return {
@@ -39,8 +46,8 @@ export default async function NewSalesDoc({ searchParams }: { searchParams: Prom
 
   return (
     <div className="stack-lg">
-      <h1 className="page-title">{t.sales.newDoc}</h1>
-      <SalesForm t={t} projects={opts} initialProject={sp.project ?? ""} initialType={sp.type ?? "progress_claim"} initialValue={sp.value} />
+      <h1 className="page-title">{edit ? t.sales.editDoc : t.sales.newDoc}</h1>
+      <SalesForm t={t} projects={opts} initialProject={sp.project ?? ""} initialType={sp.type ?? "progress_claim"} initialValue={sp.value} edit={edit} />
     </div>
   );
 }

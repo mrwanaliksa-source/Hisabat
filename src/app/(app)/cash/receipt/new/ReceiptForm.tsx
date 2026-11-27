@@ -27,6 +27,9 @@ export function ReceiptForm({ t, customers, banks, holders, docs, initialCustome
   const mine = useMemo(
     () => docs.filter((d) => d.customer === customer && (heldBy ? d.holder === heldBy : d.holder === null)),
     [docs, customer, heldBy]);
+  const others = useMemo(
+    () => docs.filter((d) => d.customer === customer && !(heldBy ? d.holder === heldBy : d.holder === null)),
+    [docs, customer, heldBy]);
   const total = existing ? existing.unallocated : toNum(amount);
   const allocated = r2(mine.reduce((s, d) => s + toNum(alloc[d.id]), 0));
   const left = r2(total - allocated);
@@ -123,6 +126,24 @@ export function ReceiptForm({ t, customers, banks, holders, docs, initialCustome
             {estShare > 0 && <div><dt>{t.cash.estShare}</dt><dd className="num">{fmt(estShare)}</dd></div>}
           </dl>
           {left > 0.004 && <p className="note">{t.cash.unallocNote}</p>}
+          {others.length > 0 && (
+            <div className="alert warn stack" data-box="other-dest">
+              <b>{t.pp.otherDest}</b>
+              <table className="small"><tbody>
+                {others.map((d) => {
+                  const hn = holders.find((h) => h.id === d.holder)?.name ?? "";
+                  return (
+                    <tr key={d.id}><td className="num">{d.project}</td><td>{d.type}</td><td className="num">{d.ref}</td><td className="n num">{fmt(d.balance)}</td>
+                      <td className="small">{d.holder ? t.pp.needPartner.replace("{name}", hn) : t.pp.needBank}</td>
+                      <td>{!existing && (
+                        <button type="button" className="btn soft sm" data-act="switch-dest"
+                          onClick={() => { setDest(d.holder ? `partner:${d.holder}` : banks[0] ? `bank:${banks[0].id}` : ""); setAlloc({}); }}>
+                          {t.pp.switchTo} {d.holder ? hn : banks[0]?.name}</button>)}</td></tr>);
+                })}
+              </tbody></table>
+              {existing && <p className="small">{t.pp.existingWrong}</p>}
+            </div>
+          )}
           {over && <p className="alert error">{t.cash.overAllocated}</p>}
         </fieldset>
       )}
