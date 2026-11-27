@@ -15,7 +15,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
 
   const [{ data: docs }, { data: bal }, { data: custodies }, { data: people }, { data: advAll }, { data: projs }] = await Promise.all([
     supabase.from("purchase_documents")
-      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,supplier_id,project:projects!purchase_documents_project_id_fkey(code),supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en)")
+      .select("id,issue_date,doc_number,details,total_amount,status,payment_source,created_by,supplier_id,attachment_path,project:projects!purchase_documents_project_id_fkey(code),supplier:parties!purchase_documents_supplier_id_fkey(name_ar,name_en)")
       .eq("company_id", company.id).order("issue_date", { ascending: false }).order("created_at", { ascending: false }).limit(300),
     supabase.from("v_purchase_balances").select("id,paid,balance").eq("company_id", company.id),
     supabase.from("v_custody").select("id,holder_name,purpose,balance,amount").eq("company_id", company.id).eq("status", "open"),
@@ -196,7 +196,8 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                       <td className="num">{p?.code ?? "—"}</td>
                       <td>{s ? (lang === "en" && s.name_en) || s.name_ar : "—"}</td>
                       <td className="clip"><Link href={`/purchases/${d.id}`}>{d.details ?? d.doc_number}</Link>
-                        {d.payment_source === "custody" && <span className="chip tiny">{t.nav.custody}</span>}</td>
+                        {d.payment_source === "custody" && <span className="chip tiny">{t.nav.custody}</span>}
+                        {d.attachment_path && <a href={`/purchases/${d.id}/photo`} target="_blank" rel="noreferrer" className="photo-link" title={t.exp.viewPhoto} data-act="row-photo"> 📷</a>}</td>
                       <td className="n num">{money(d.total_amount)}</td>
                       {manager && <td className="n num">{left > 0.004 ? <b className="warn-text">{money(left)}</b> : "—"}</td>}
                       <td className="muted small">{who.get(d.created_by ?? "") ?? ""}</td>

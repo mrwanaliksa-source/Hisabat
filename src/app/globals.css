@@ -395,3 +395,9 @@ details.inline-menu .pop { position: absolute; inset-inline-end: 0; top: calc(10
 .company-list { display: flex; flex-direction: column; gap: 8px; } .company-pick { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border: 1px solid #dfe5ec; border-radius: 10px; background: #fff; text-decoration: none; color: inherit; } .company-pick:hover { border-color: var(--teal-2); background: #f3faf8; }
 .kpi-sub { display: block; font-size: .78rem; margin-top: 2px; } .pc-grid small { display: block; font-size: .72rem; }
 .danger-zone summary { cursor: pointer; color: var(--red); font-weight: 600; } .danger-zone { border-color: #f2c4bf; }
+
+/* invoice photo */
+.photo-preview { display: block; margin-top: .5rem; border: 1px solid var(--line, #e3e7ea); border-radius: 10px; overflow: hidden; max-width: 420px; background: #fff; }
+.photo-preview img { display: block; width: 100%; max-height: 520px; object-fit: contain; }
+.photo-link { text-decoration: none; }
+@media print { .photo-preview { max-width: 100%; } }

@@ -74,6 +74,7 @@ select 'project_cash' from pg_views where viewname = 'v_project_cash';
 | 037 | `037_owner_advance_source.sql` — سلف الشركاء: تختار طلعت منين (بنك/صندوق أو مصدر خارجي) وعلى حساب أنهي مشروع | — |
 | 038 | `038_unallocate.sql` — فك تخصيص تحصيل من فاتورة لو اتخصص غلط | — |
 | 039 | `039_edit_posted_sales.sql` — تعديل فاتورة مبيعات معتمدة ومرحّلة (أدمن) | — |
+| 040 | `040_delete_partner_transfer.sql` — مسح حركة مع الشريك اتسجلت غلط (أدمن) | — |
 
 **لو طلع أي خطأ تاني:** وقّف وابعت الرسالة.
 

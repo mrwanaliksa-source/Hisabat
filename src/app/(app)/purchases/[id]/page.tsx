@@ -56,6 +56,7 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
           <p className="muted">{proj ? <Link className="link" href={`/projects/${proj.id}`}>{proj.code} · {nm(proj)}</Link> : t.exp.general} · <span className="num">{d.issue_date}</span></p>
         </div>
         <div className="actions">
+          {photoUrl && <a href={photoUrl} target="_blank" rel="noreferrer" className="btn primary" data-act="photo">📷 {t.exp.viewPhoto}</a>}
           {role === "admin" && <Link href={`/purchases/new?edit=${id}`} className="btn soft" data-act="edit">{t.exp.edit}</Link>}
           {role === "admin" && <a href="#delete" className="btn ghost danger">{t.exp.delete}</a>}
           <Link href="/purchases" className="btn ghost">{t.back}</Link>
@@ -87,7 +88,12 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
               <button className="btn ghost sm" data-act="link-commitment">{t.cm.link}</button>
             </form>
           )}
-          {photoUrl && <a className="btn soft sm" href={photoUrl} target="_blank" rel="noreferrer">{t.exp.viewPhoto}</a>}
+          {photoUrl && (/\.pdf(\?|$)/i.test(d.attachment_path ?? "")
+            ? <a className="btn soft sm" href={photoUrl} target="_blank" rel="noreferrer">📄 {t.exp.viewPhoto}</a>
+            : <a href={photoUrl} target="_blank" rel="noreferrer" className="photo-preview" title={t.exp.viewPhoto}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photoUrl} alt={t.exp.viewPhoto} loading="lazy" />
+              </a>)}
         </section>
 
         <section className="card stack">

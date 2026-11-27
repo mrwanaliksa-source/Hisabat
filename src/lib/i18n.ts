@@ -120,6 +120,7 @@ const ar = {
     diff: "فرق التسوية", final: "الرصيد بعد التسوية", reason: "السبب", locked: "اتقفل في",
   },
   pp: {
+    toPartnerBank: "اتحطت في بنك الشريك (المتابَع)", toPartnerBankHint: "الفلوس لسه مع الشريك — بس اتنقلت من «لينا لدى الشريك» لبنكه اللي متابعينه هنا. اختار بنكه.", inBank: "في", partnerBanks: "بنوك الشريك", ourBanks: "بنوكنا",
     otherDest: "فواتير للعميل ده مش ظاهرة فوق لأن مكان الاستلام مختلف", needPartner: "مشروع باسم الشريك — التحصيل لازم يتسجل «عند الشريك: {name}»", needBank: "مشروع باسم الشركة — التحصيل لازم يتسجل في بنك أو صندوق الشركة", switchTo: "حوّل الاستلام لـ", existingWrong: "التحصيل ده اتسجل في مكان غلط ومش هينفع يتخصص على الفواتير دي. الغيه من صفحة الكاش (زرار إلغاء) وسجّله تاني واختار مكان الاستلام الصح.",
     holder: "العقد والفواتير باسم", holderCompany: "شركتنا", holderPartner: "الشركة الشريكة",
     holderHint: "عند اختيار الشريك: الفواتير وضريبتها والتحصيل باسمه، ونحن ننفذ وندفع التكاليف.",
@@ -399,6 +400,7 @@ const en: Dict = {
     diff: "Adjustment", final: "Balance after adjustment", reason: "Reason", locked: "Locked on",
   },
   pp: {
+    toPartnerBank: "Money placed in the partner's bank (tracked)", toPartnerBankHint: "The money stays with the partner — it just moves from 'held by the partner' to their bank tracked here. Choose their bank.", inBank: "into", partnerBanks: "Partner banks", ourBanks: "Our banks",
     otherDest: "Invoices of this customer hidden above because the receipt destination differs", needPartner: "Partner-held project — the receipt must be recorded as held by {name}", needBank: "Company project — the receipt must go to a company bank or cash box", switchTo: "Switch destination to", existingWrong: "This receipt was recorded in the wrong place and can’t be allocated to these invoices. Reverse it from the Cash page and record it again with the right destination.",
     holder: "Contract & invoices in the name of", holderCompany: "Our company", holderPartner: "The partner company",
     holderHint: "When the partner holds the contract, invoices, their VAT and collections are in its name; we execute and pay the costs.",
