@@ -37,7 +37,7 @@ export default async function SuppliersPage({ searchParams }: { searchParams: Pr
       <form className="inline-form"><input name="q" defaultValue={sp.q} placeholder={t.sup.search} /><button className="btn ghost sm">🔍</button></form>
       <section className="card">
         <div className="table-wrap"><table>
-          <thead><tr><th>{t.sup.name}</th><th>{t.sup.vat}</th><th className="n">{t.sup.invoices}</th><th className="n">{t.sup.total}</th><th className="n">{t.exp.balance}</th><th /></tr></thead>
+          <thead><tr><th>{t.sup.name}</th><th>{t.sup.vat}</th><th className="n">{t.sup.invoices}</th><th className="n">{t.sup.total}</th><th className="n">{t.exp.balance}</th><th /><th /></tr></thead>
           <tbody>{rows.map((s) => {
             const a = agg.get(s.id) ?? { n: 0, total: 0, due: 0 };
             const form = `f-${s.id}`;
@@ -48,6 +48,7 @@ export default async function SuppliersPage({ searchParams }: { searchParams: Pr
                 <td className="n num"><Link className="link" href={`/purchases?supplier=${s.id}`}>{a.n}</Link></td>
                 <td className="n num">{money(a.total)}</td>
                 <td className="n num">{a.due > 0.004 ? <b className="warn-text">{money(a.due)}</b> : "—"}</td>
+                <td className="no-wrap"><Link className="btn soft sm" href={`/purchases/suppliers/${s.id}`} data-act="supplier-file">{t.sup.file}</Link></td>
                 <td><form id={form} action={saveSupplier}><input type="hidden" name="id" value={s.id} />
                   <button className="btn ghost sm" data-act="save-supplier">{t.set.save}</button></form></td>
               </tr>);

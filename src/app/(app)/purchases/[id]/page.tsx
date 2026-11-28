@@ -52,7 +52,7 @@ export default async function ExpenseDetail({ params, searchParams }: { params: 
       <div className="page-head">
         <div>
           <p className="eyebrow num">{d.doc_number}</p>
-          <h1 className="page-title">{nm(supp)}</h1>
+          <h1 className="page-title">{manager && d.supplier_id ? <Link className="link" href={`/purchases/suppliers/${d.supplier_id}`}>{nm(supp)}</Link> : nm(supp)}</h1>
           <p className="muted">{proj ? <Link className="link" href={`/projects/${proj.id}`}>{proj.code} · {nm(proj)}</Link> : t.exp.general} · <span className="num">{d.issue_date}</span></p>
         </div>
         <div className="actions">

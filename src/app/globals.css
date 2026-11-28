@@ -401,3 +401,10 @@ details.inline-menu .pop { position: absolute; inset-inline-end: 0; top: calc(10
 .photo-preview img { display: block; width: 100%; max-height: 520px; object-fit: contain; }
 .photo-link { text-decoration: none; }
 @media print { .photo-preview { max-width: 100%; } }
+
+/* tabs (supplier file) */
+.tabs { display: flex; gap: .35rem; flex-wrap: wrap; border-bottom: 1px solid var(--line, #e3e7ea); }
+.tabs a { padding: .55rem 1rem; border-radius: 8px 8px 0 0; color: inherit; text-decoration: none; font-weight: 600; opacity: .7; border-bottom: 3px solid transparent; }
+.tabs a:hover { opacity: 1; background: rgba(0,0,0,.03); }
+.tabs a.on { opacity: 1; color: var(--teal); border-bottom-color: var(--teal); }
+.desc-cell { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
