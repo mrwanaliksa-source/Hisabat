@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getContext, canManage } from "@/lib/context";
 import { dict, getLang, money, pct } from "@/lib/i18n";
+import { setVatPeriod } from "./actions";
 
 type L = { debit: number; credit: number; project_id: string | null; account: { system_key: string | null } | null;
   entry: { entry_date: string; source_type: string } | null };
 
-export default async function PartnerPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PartnerPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; err?: string }> }) {
+  const sp = await searchParams;
   const { id } = await params;
   const lang = await getLang();
   const t = dict(lang);
@@ -65,10 +67,22 @@ export default async function PartnerPage({ params }: { params: Promise<{ id: st
         <div>
           <p className="eyebrow">{t.pt.partner}</p>
           <h1 className="page-title">{nm}</h1>
-          <p className="muted">{partner.vat_number ? <span className="num">{partner.vat_number}</span> : null} · {t.pp.vatPeriod}: {partner.vat_period === "monthly" ? t.pp.monthly : t.pp.quarterly}</p>
+          <div className="muted inline-form">{partner.vat_number ? <span className="num">{partner.vat_number} ·</span> : null} {t.pp.vatPeriod}:
+            {role === "admin" ? (
+              <form action={setVatPeriod} className="inline-form">
+                <input type="hidden" name="id" value={partner.id} />
+                <select name="period" defaultValue={partner.vat_period ?? "quarterly"}>
+                  <option value="monthly">{t.pp.monthly}</option><option value="quarterly">{t.pp.quarterly}</option>
+                </select>
+                <button className="btn ghost sm" data-act="save-vat-period">{t.set.save}</button>
+              </form>
+            ) : <b>{partner.vat_period === "monthly" ? t.pp.monthly : t.pp.quarterly}</b>}
+          </div>
         </div>
         <Link href="/reports/partners" className="btn ghost">{t.back}</Link>
       </div>
+      {sp.err && <p className="alert error">{sp.err}</p>}
+      {sp.ok && <p className="alert ok">✓ {t.set.saved}</p>}
 
       <section className="card">
         <h2>{t.pt.projects}</h2>

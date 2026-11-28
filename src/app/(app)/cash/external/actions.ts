@@ -9,11 +9,11 @@ const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 export async function saveExternal(fd: FormData) {
   const { supabase, company } = await getContext();
   if (!company) return;
-  const { error } = await supabase.rpc("record_external", {
-    p_company: company.id,
-    p: { kind: s(fd, "kind"), account_id: s(fd, "account"), amount: String(toNum(fd.get("amount"))), fund_date: s(fd, "date"),
-         project_id: s(fd, "project"), counterparty: s(fd, "who"), reference: s(fd, "reference"), notes: s(fd, "notes") },
-  });
+  const p = { kind: s(fd, "kind"), account_id: s(fd, "account"), amount: String(toNum(fd.get("amount"))), fund_date: s(fd, "date"),
+         project_id: s(fd, "project"), counterparty: s(fd, "who"), reference: s(fd, "reference"), notes: s(fd, "notes") };
+  const { error } = s(fd, "edit_id")
+    ? await supabase.rpc("edit_external", { p_id: s(fd, "edit_id"), p, p_reason: s(fd, "reason") })
+    : await supabase.rpc("record_external", { p_company: company.id, p });
   revalidatePath("/cash"); revalidatePath("/"); revalidatePath("/cash/external");
   redirect(`/cash/external${error ? `?err=${encodeURIComponent(error.message)}` : "?ok=1"}`);
 }

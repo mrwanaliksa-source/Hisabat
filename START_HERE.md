@@ -75,6 +75,8 @@ select 'project_cash' from pg_views where viewname = 'v_project_cash';
 | 038 | `038_unallocate.sql` — فك تخصيص تحصيل من فاتورة لو اتخصص غلط | — |
 | 039 | `039_edit_posted_sales.sql` — تعديل فاتورة مبيعات معتمدة ومرحّلة (أدمن) | — |
 | 040 | `040_delete_partner_transfer.sql` — مسح حركة مع الشريك اتسجلت غلط (أدمن) | — |
+| 041 | `041_edit_external.sql` — تعديل حركة «فلوس من برا» (سلفة، سداد…) | — |
+| 042 | `042_partner_vat_period.sql` — تغيير دورة إقرار الشريك (شهري/ربع سنوي) من صفحة الشريك | — |
 
 **لو طلع أي خطأ تاني:** وقّف وابعت الرسالة.
 

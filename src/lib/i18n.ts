@@ -172,7 +172,7 @@ const ar = {
          income: "دخل مش من عميل (بيع خردة، عمولة…) — بيتسجل إيراد، ولو اخترت مشروع بيدخل في ربحه.",
          owner_out: "فلوس خدها المالك من الشركة — بتقلل رأس المال، مش مصروف.",
          loan_out: "رجّعت جزء أو كل سلفة — بتقلل الدين اللي عليك للشخص ده." },
-    direct: "اتدفع مباشر (مش من البنك)", toAcc: "دخلت في", fromAcc: "طلعت من", who: "اسم الشخص / الجهة", loans: "سلف علينا لسه", borrowed: "اتسلفنا", repaid: "رجّعنا", owed: "الباقي علينا",
+    direct: "اتدفع مباشر (مش من البنك)", edit: "تعديل", saveEdit: "حفظ التعديل", editing: "بتعدّل حركة متسجلة — الحفظ بيلغي القديمة ويسجلها بالبيانات دي.", toAcc: "دخلت في", fromAcc: "طلعت من", who: "اسم الشخص / الجهة", loans: "سلف علينا لسه", borrowed: "اتسلفنا", repaid: "رجّعنا", owed: "الباقي علينا",
   },
   sup: {
     title: "الموردين", btn: "الموردين", name: "اسم المورد", vat: "الرقم الضريبي", invoices: "فواتير", total: "إجمالي الفواتير",
@@ -445,7 +445,7 @@ const en: Dict = {
     whoseHint: "Filled from the source account when it is linked to a project.", btn: "Transfer between accounts",
   },
   ext: {
-    title: "Money in / out (outside)", direct: "Paid directly (not via bank)", btn: "Outside money", save: "Record", list: "Movements", kind: "Type", acc: "Account",
+    title: "Money in / out (outside)", direct: "Paid directly (not via bank)", edit: "Edit", saveEdit: "Save changes", editing: "Editing a recorded movement — saving replaces the old one with these values.", btn: "Outside money", save: "Record", list: "Movements", kind: "Type", acc: "Account",
     k: { owner_in: "Owner funding", loan_in: "Loan received", income: "Other income", owner_out: "Owner withdrawal", loan_out: "Loan repayment" },
     h: { owner_in: "Money the owner/partners put into the company — recorded as equity, not income or debt.",
          loan_in: "Someone lent you money to be returned — recorded as a debt in their name until repaid.",
